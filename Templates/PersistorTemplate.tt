@@ -1,0 +1,528 @@
+﻿<#@ template language="C#" #>
+<#@ assembly name="System.Core" #>
+<#@ import namespace="System" #>
+<#@ import namespace="System.Text" #>
+<#@ import namespace="System.Collections.Generic" #>
+<#@ import namespace="System.Linq" #>
+<#@ import namespace="System.Data" #>
+<#@ import namespace="System.Data.Common" #>
+<#@ import namespace="Persisto" #>
+<#@ parameter name="ModelInfo" type="Persisto.IDbModelInfo" #>
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Diagnostics;
+using System.Data.Common;
+using Persisto;
+using <#= ModelInfo.ModelType.Namespace #>;
+
+namespace Persisto.Generated.Persistors
+{
+	public class <#= ModelInfo.ModelType.Name #>Persistor : PersistorBase, IPersistor<<#= ModelInfo.ModelType.FullName #>>
+	{
+		public <#= ModelInfo.ModelType.Name #>Persistor(IDbModelInfo<<#= ModelInfo.ModelType.Name #>> modelInfo)
+			: base(modelInfo)
+		{
+			ModelInfo = modelInfo;
+
+<#
+var membersWithFields = 
+	ModelInfo.Members
+	.Where(m => m.IsBackedByField)
+	.ToArray();
+
+foreach (IDbMemberInfo member in ModelInfo.Members)
+{
+	WriteLine("\t\t\tMemberInfo_{0} = modelInfo[\"{0}\"];", member.Name);
+}
+#>
+		}
+		
+		new public IDbModelInfo<<#= ModelInfo.ModelType.Name #>> ModelInfo { get; private set; }
+		
+<#
+foreach (IDbMemberInfo member in ModelInfo.Members)
+{
+	WriteLine("\t\tinternal IDbMemberInfo MemberInfo_" + member.Name + " { get; private set; }");
+}
+#>
+
+		new public IEnumerable<<#= ModelInfo.ModelType.FullName #>> LoadModels(
+			System.Data.Common.DbConnection db,
+			Persisto.LoadOptions options)
+		{
+			var models = new List<<#= ModelInfo.ModelType.FullName #>>();
+			
+			Func<System.Data.Common.DbConnection> createConnection = options.CreateConnectionFunc;
+			if (createConnection == null)
+			{
+				createConnection = DbModelInfo.CreateConnectionFunc;
+			}
+
+			using (var command = db.CreateCommand())
+			{
+<#
+// Build sql for loading models
+var loadSql = new StringBuilder("SELECT " + ModelInfo.TableName + ".");
+
+loadSql.Append(string.Join(", " + ModelInfo.TableName + ".", membersWithFields.Select(m => m.FieldName).ToArray()));
+
+loadSql.Append(" FROM " + ModelInfo.TableName);
+#>
+				var loadSql = new StringBuilder(@"<#= loadSql.ToString() #>");
+
+				if (!string.IsNullOrWhiteSpace(options.Joins))
+				{
+					loadSql.Append(" " + options.Joins + " ");
+				}
+				
+				if (!string.IsNullOrWhiteSpace(options.Where))
+				{
+					if (!options.Where.Trim().ToLower().StartsWith("where"))
+					{
+						loadSql.Append(" WHERE");
+					}
+					loadSql.Append(" " + options.Where + " ");
+				}
+
+				if (!string.IsNullOrWhiteSpace(options.OrderBy))
+				{
+					if (!options.Where.Trim().ToLower().StartsWith("order by"))
+					{
+						loadSql.Append(" ORDER BY");
+					}
+					loadSql.Append(" " + options.OrderBy + " ");
+				}
+
+				command.CommandText = loadSql.ToString();
+				
+				var paramNames = options.GetParamNames();
+
+				if (options.ParamValues != null)
+				{
+					for (var index = 0; index < options.ParamValues.Length; index++)
+					{
+						command.CreateParameter(paramNames[index], options.ParamValues[index]);
+					}
+				}
+				
+				using (var reader = command.ExecuteReader())
+				{
+					while (reader.Read())
+					{
+						var model = new Persisto.Generated.Models.<#= ModelInfo.GeneratedModelTypeName #>();
+						
+						model._Support.CreateConnectionFunc = createConnection;
+						
+<#
+for (var memberIndex = 0; memberIndex < ModelInfo.Members.Length; memberIndex++)
+{
+	DbMemberInfo member = ModelInfo.Members[memberIndex];
+	string memberName = member.Name;
+	
+	Type memberType = member.MemberType;
+	
+	string method = "";
+	
+	var manyToOne = member.Relation as DbRelation.ManyToOneAttribute;
+	var oneToMany = member.Relation as DbRelation.OneToManyAttribute;
+	var manyToMany = member.Relation as DbRelation.ManyToManyAttribute;
+
+	var foreignTypeModelInfo = member.Relation == null ? null : DbModelInfo.Get(member.Relation.ForeignType);
+	
+	if (member.Relation != null)
+	{
+		if (manyToOne != null)
+		{
+			if ((bool)member.Relation.LoadOnDemand)
+			{
+				IDbModelInfo foreignModelInfo = DbModelInfo.Get(member.Relation.ForeignType);
+				
+				memberName = member.Name + foreignModelInfo.ID.Name;
+				
+				memberType = foreignModelInfo.ID.MemberType;
+				
+				WriteLine("{0}model.HasLoaded{1} = false;", "\t\t\t\t\t\t", member.Name);
+			}
+			else
+			{
+				method = 
+					"DbModelInfo.Get<" + member.MemberType.FullName +
+					">().Persistor.LoadModel(db, new LoadOptions() { Where = \"" +
+					foreignTypeModelInfo.ID.FieldName + " = @" + foreignTypeModelInfo.ID.FieldName +
+					"\", ParamValues = new object[] { reader.GetValue(" + memberIndex.ToString() + ") } })";
+				
+				WriteLine("{0}model.{1} = {2};", "\t\t\t\t\t\t", memberName, method);
+				
+				continue;
+			}
+		}
+		else if (oneToMany != null)
+		{
+			if (!member.Relation.LoadOnDemand)
+			{
+#>
+						model.<#= member.Name #> = db.LoadModels<<#= member.Relation.ForeignType.FullName #>>(
+							new LoadOptions()
+							{
+								Where = "<#= member.FieldName #> = @<#= member.FieldName #>",
+								ParamValues = new object[] { model.<#= ModelInfo.ID.Name #> } 
+							}).ToList();
+<#
+			}
+			continue;
+		}
+		else
+		{
+			// TODO: Support ManyToMany
+			continue;
+		}
+	}
+
+	if (!member.IsBackedByField)
+	{
+		continue;
+	}
+
+	if (memberType == typeof(Guid))
+	{
+		method = string.Format("reader.IsDBNull({0}) ? default(Guid) : new Guid(reader.GetString({0}))", memberIndex);
+	}
+	else if (memberType == typeof(int))
+	{
+		method = string.Format("reader.GetInt32({0})", memberIndex);
+	}
+	else if (memberType == typeof(Int16))
+	{
+		method = string.Format("reader.GetInt16({0})", memberIndex);
+	}
+	else if (memberType == typeof(Int64))
+	{
+		method = string.Format("reader.GetInt64({0})", memberIndex);
+	}
+	else if (memberType == typeof(DateTime))
+	{
+		method = string.Format("reader.GetDateTime({0})", memberIndex);
+	}
+	else if (memberType == typeof(string))
+	{
+		method = string.Format("reader.GetString({0})", memberIndex);
+	}
+	else if (memberType == typeof(double))
+	{
+		method = string.Format("reader.GetDouble({0})", memberIndex);
+	}
+	else if (memberType.IsEnum)
+	{
+		if ((member.DataType == DbType.String) || (member.DataType == DbType.AnsiString))
+		{
+			method = string.Format("({0})Enum.Parse(typeof({0}), reader.GetString({1}))",
+				member.MemberType.FullName, memberIndex);
+		}
+		else if (member.DataType == DbType.Int16)
+		{
+			method = string.Format("({0})reader.GetInt16({1})",
+				member.MemberType.FullName, memberIndex);
+		}
+		else if (member.DataType == DbType.Int32)
+		{
+			method = string.Format("({0})reader.GetInt32({1})",
+				member.MemberType.FullName, memberIndex);
+		}
+		else if (member.DataType == DbType.Int64)
+		{
+			method = string.Format("({0})reader.GetInt64({1})",
+				member.MemberType.FullName, memberIndex);
+		}
+		else if (member.DataType == DbType.Byte)
+		{
+			method = string.Format("({0})reader.GetByte({1})",
+				member.MemberType.FullName, memberIndex);
+		}
+		else
+		{
+			continue;
+		}
+	}
+	else if (memberType == typeof(bool))
+	{
+		if (member.DataType == DbType.Boolean)
+		{
+			method = string.Format("reader.GetBoolean({0})", memberIndex);
+		}
+		else if (member.DataType == DbType.Int16)
+		{
+			method = string.Format("reader.GetInt16({0}) > 0", memberIndex);
+		}
+		else if (member.DataType == DbType.Int32)
+		{
+			method = string.Format("reader.GetInt32({0}) > 0", memberIndex);
+		}
+		else if (member.DataType == DbType.Int64)
+		{
+			method = string.Format("reader.GetInt64({0}) > 0", memberIndex);
+		}
+		else if (member.DataType == DbType.Byte)
+		{
+			method = string.Format("reader.GetByte({0}) > 0", memberIndex);
+		}
+		else if ((member.DataType == DbType.String) || (member.DataType == DbType.AnsiString))
+		{
+			method = string.Format(
+				"!reader.GetString({0}).Equals(\"N\", StringComparison.CurrentCultureIgnoreCase)", memberIndex);
+		}
+		else
+		{
+			continue;
+		}
+	}
+	else
+	{
+		continue;
+	}
+	
+	WriteLine("{0}model.{1} = {2};", "\t\t\t\t\t\t", memberName, method);
+}
+#>
+
+						model._Support.ExistsInDatabase = true;
+						
+						models.Add(model);
+					}
+				}
+			}
+
+			return models;
+		}
+
+<#
+
+Action<bool, bool> setFields =
+	delegate(bool includeId, bool useIncrementorValues)
+	{
+		for (var memberIndex = 0; memberIndex < membersWithFields.Length; memberIndex++)
+		{
+			DbMemberInfo member = membersWithFields[memberIndex];
+			string memberName = member.Name;
+			var expression = "";
+
+			if (member.IsIdentity && !includeId)
+			{
+				continue;
+			}
+
+			if (useIncrementorValues && (member.Incrementor != null))
+			{
+				expression = "newValueFor" + memberName + ".ToString()";
+			}
+			else if (member.Relation != null)
+			{
+				if (member.Relation is DbRelation.ManyToOneAttribute)
+				{
+					IDbModelInfo foreignModelInfo = DbModelInfo.Get(member.Relation.ForeignType);
+					
+					if ((bool)member.Relation.LoadOnDemand)
+					{
+						string generatedModelTypeName = "Persisto.Generated.Models." + ModelInfo.ModelType.Name;						
+						
+						string foreignModelIdName = foreignModelInfo.ID.Name;
+						if (foreignModelInfo.ID.MemberType == typeof(Guid))
+						{
+							foreignModelIdName += ".ToString(true)";
+						}
+						
+						expression = string.Format(
+							"model is {0} ? (({0})model).{1}{2} : (model.{1} == null ? null : (object)model.{1}.{2})",
+							generatedModelTypeName,
+							member.Name,
+							foreignModelIdName);
+					}
+					else
+					{
+						string foreignModelIdName = foreignModelInfo.ID.Name;
+						if (foreignModelInfo.ID.MemberType == typeof(Guid))
+						{
+							foreignModelIdName += ".ToString(true)";
+						}
+						
+						expression = string.Format("model.{0} == null ? null : model.{0}.{1}",
+							member.Name,
+							foreignModelIdName);
+					}
+				}
+				else if (member.Relation is DbRelation.OneToManyAttribute)
+				{
+					continue;
+				}
+				else
+				{
+					// TODO: Support OneToMany + ManyToMany
+					continue;
+				}
+			}
+			else
+			{
+				if (member.MemberType.IsEnum)
+				{
+					if ((member.DataType == DbType.Int16) || (member.DataType == DbType.Int32) ||
+						(member.DataType == DbType.Int64) || (member.DataType == DbType.Byte) ||
+						(member.DataType == DbType.SByte))
+					{
+						expression = string.Format("(int)model.{0}", memberName);
+					}
+					else if ((member.DataType == DbType.String) || (member.DataType == DbType.AnsiString) ||
+							(member.DataType == DbType.AnsiStringFixedLength))
+					{
+						expression = string.Format("model.{0}.ToString()", memberName);
+					}
+				}
+				else if (member.MemberType == typeof(bool))
+				{
+					if ((member.DataType == DbType.Int16) || (member.DataType == DbType.Int32) ||
+						(member.DataType == DbType.Int64) || (member.DataType == DbType.Byte) ||
+						(member.DataType == DbType.SByte))
+					{
+						expression = string.Format("model.{0} ? 1 : 0", memberName);
+					}
+					else if ((member.DataType == DbType.String) || (member.DataType == DbType.AnsiString) ||
+							(member.DataType == DbType.AnsiStringFixedLength))
+					{
+						expression = string.Format("model.{0} ? \"Y\" : \"N\"", memberName);
+					}
+					else
+					{
+						expression = "model." + memberName;
+					}
+				}
+				else if (member.MemberType == typeof(Guid))
+				{
+					expression = "model." + memberName + ".ToString(true)";
+				}
+				else
+				{
+					expression = "model." + memberName;
+				}
+			}
+
+			WriteLine("{0}command.CreateParameter(\"@{1}\", {2});", "\t\t\t\t", member.FieldName, expression);
+		}
+	};
+
+#>
+		
+		new public <#= ModelInfo.ModelType.FullName #> LoadModel(
+			System.Data.Common.DbConnection db,
+			Persisto.LoadOptions options)
+		{
+			var models = LoadModels(db, options);
+
+			var model = models.FirstOrDefault();
+
+			return model;
+		}
+		
+		public void InsertModel(
+			System.Data.Common.DbConnection db,
+			<#= ModelInfo.ModelType.FullName #> model)
+		{
+			if (ModelInfo.BaseModelInfo != null)
+			{
+				ModelInfo.BaseModelInfo.Persistor.InsertModel(db, model);
+			}
+			
+			using (var command = db.CreateCommand())
+			{
+<#
+
+StringBuilder insertSql = new StringBuilder("INSERT INTO " + ModelInfo.TableName);
+
+insertSql.Append(" (" + string.Join(", ", membersWithFields.Select(m => m.FieldName).ToArray()) + ")");
+insertSql.Append(" VALUES (@" + string.Join(", @", membersWithFields.Select(m => m.FieldName).ToArray()) + ")");
+
+#>
+				command.CommandText = "<#= insertSql.ToString() #>";
+
+<#
+foreach (IDbMemberInfo member in ModelInfo.Members.Where(m => m.Incrementor != null))
+{
+	WriteLine("\t\t\t\tvar newValueFor{0} = model.{0} != default({1}) ? model.{0} : ({1})MemberInfo_{0}.Incrementor.Increment(ModelInfo, MemberInfo_{0}, model);", member.Name, member.MemberType.FullName);
+}
+
+WriteLine("");
+
+setFields(true, true);
+#>
+
+				command.ExecuteNonQuery();
+
+<#
+foreach (IDbMemberInfo member in ModelInfo.Members.Where(m => m.Incrementor != null))
+{
+	WriteLine("\t\t\t\tmodel.{0} = newValueFor{0};", member.Name);
+}
+#>				var generatedModel = model as Persisto.IGeneratedModel;
+				if (generatedModel != null)
+				{
+					generatedModel._Support.ExistsInDatabase = true;
+				}
+			}
+		}
+		
+		public void UpdateModel(
+			System.Data.Common.DbConnection db,
+			<#= ModelInfo.ModelType.FullName #> model)
+		{
+			if (ModelInfo.BaseModelInfo != null)
+			{
+				ModelInfo.BaseModelInfo.Persistor.UpdateModel(db, model);
+			}
+			
+			using (var command = db.CreateCommand())
+			{
+<#
+StringBuilder updateSql = new StringBuilder("UPDATE " + ModelInfo.TableName + " SET ");
+updateSql.Append(string.Join(", ", membersWithFields
+	.Where(m => !m.IsIdentity)
+	.Select(m => string.Format("{0} = @{0}", m.FieldName)).ToArray()));
+updateSql.Append(" WHERE " + string.Format("{0} = @{0}", ModelInfo.ID.FieldName));
+#>
+				command.CommandText = @"<#= updateSql.ToString() #>";
+				
+<# setFields(false, false); #>
+				
+				command.ExecuteNonQuery();
+				
+				var generatedModel = model as Persisto.IGeneratedModel;
+				if (generatedModel != null)
+				{
+					generatedModel._Support.ExistsInDatabase = true;
+				}
+			}
+		}
+		
+		public void DeleteModel(
+			System.Data.Common.DbConnection db,
+			<#= ModelInfo.ModelType.FullName #> model)
+		{
+			using (var command = db.CreateCommand())
+			{
+				command.CommandText = @"DELETE FROM <#= ModelInfo.TableName #> WHERE <#= ModelInfo.ID.FieldName #> = @<#= ModelInfo.ID.FieldName #>";
+				
+				command.CreateParameter(
+					"@<#= ModelInfo.ID.FieldName #>",
+					System.Data.DbType.<#= ModelInfo.ID.DataType.ToString() #>,
+					model.<#= ModelInfo.ID.Name #>,
+					true);
+				
+				command.ExecuteNonQuery();
+				
+				var generatedModel = model as Persisto.IGeneratedModel;
+				if (generatedModel != null)
+				{
+					generatedModel._Support.ExistsInDatabase = false;
+				}
+			}
+		}
+	}
+}

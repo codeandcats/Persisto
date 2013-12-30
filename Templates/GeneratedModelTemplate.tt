@@ -1,0 +1,192 @@
+﻿<#@ template language="C#" #>
+<#@ assembly name="System.Core" #>
+<#@ import namespace="System.Linq" #>
+<#@ import namespace="System.Text" #>
+<#@ import namespace="System.Collections.Generic" #>
+<#@ import namespace="Persisto" #>
+<#@ parameter name="ModelInfo" type="Persisto.IDbModelInfo" #>
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
+using Persisto;
+
+namespace Persisto.Generated.Models
+{
+    public class <#= ModelInfo.GeneratedModelTypeName #> : <#= ModelInfo.ModelType.FullName #>, IGeneratedModel
+    {
+		private ModelSupport __support = new ModelSupport();
+		public ModelSupport _Support
+		{
+			get { return __support; }
+			set { __support = value; }
+		}
+
+<#
+foreach (DbMemberInfo member in ModelInfo.Members
+	.Where(m => m.Relation == null))
+{
+	string memberModifiers = " ";
+	string backingMemberName = "";
+	
+	if (!ModelInfo.ModelType.IsInterface)
+	{
+		backingMemberName = "base." + member.Name;
+
+		if (member.IsVirtual)
+		{
+			memberModifiers = "override ";
+		}
+		else
+		{
+			memberModifiers = "new ";
+		}
+	}
+
+	if (ModelInfo.ModelType.IsInterface || member.IsAbstract)
+	{
+		backingMemberName = member.Name.ToCamelCase();
+		WriteLine("\t\tprivate " + member.MemberType.FullName + " " + backingMemberName + ";");
+	}
+#>
+		public <#= memberModifiers + member.MemberType.FullName + " " + member.Name #>
+		{
+			get
+			{
+				return <#= backingMemberName #>;
+			}
+			set
+			{
+				if (value == <#= backingMemberName #>)
+				{
+					return;
+				}
+				
+				<#= backingMemberName #> = value;
+				
+				_Support.FieldChanged("<#= member.Name #>");
+			}
+		}
+
+<#
+}
+#>
+		
+<#
+foreach (DbMemberInfo member in ModelInfo.Members
+	.Where(m => m.Relation is DbRelation.ManyToOneAttribute)
+	.Where(m => m.Relation.LoadOnDemand))
+{
+	DbRelation.ManyToOneAttribute manyToOne = (DbRelation.ManyToOneAttribute)member.Relation;
+	
+	DbMemberInfo foreignMember = DbModelInfo.Get(manyToOne.ForeignType).ID;
+	
+	IDbModelInfo foreignModelInfo = DbModelInfo.Get(manyToOne.ForeignType);
+	
+	string backingMemberName = member.Name + foreignModelInfo.ID.Name;
+
+	string hasLoadedField = "HasLoaded" + member.Name;
+	
+#>
+		internal <#= foreignMember.MemberType.FullName #> <#= backingMemberName #> = default(<#= foreignMember.MemberType.FullName #>);
+		
+		// Initially set to true so new instances don't try to load objects 
+		// that clearly won't be there. When LoadModel returns one of these
+		// it will set this property to false.
+		internal bool <#= hasLoadedField #> = true;
+		
+		public override <#= member.MemberType.FullName #> <#= member.Name #>
+		{
+			get
+			{
+				if (!<#= hasLoadedField #>)
+				{
+					using (var db = this._Support.CreateConnection())
+					{
+						base.<#= member.Name #> = db.LoadModelById<<#= member.MemberType.FullName #>>(<#= backingMemberName #>);
+					}
+					<#= hasLoadedField #> = true;
+				}
+				
+				return base.<#= member.Name #>;
+			}
+			set
+			{
+				if (value == null)
+				{
+					<#= backingMemberName #> = default(<#= foreignMember.MemberType.FullName #>);
+				}
+				else
+				{
+					<#= backingMemberName #> = value.<#= foreignMember.Name #>;
+				}
+				
+				base.<#= member.Name #> = value;
+				
+				<#= hasLoadedField #> = true;
+			}
+		}
+<#
+}
+
+foreach (IDbMemberInfo member in ModelInfo.Members
+	.Where(m => m.Relation is DbRelation.OneToManyAttribute)
+	.Where(m => m.Relation.LoadOnDemand))
+{
+	string backingMemberName = 
+		member.Name.ToLower().Substring(0, 1) +
+		member.Name.ToLower().Substring(1);
+
+	string hasLoadedMemberName = "HasLoaded" + member.Name;
+
+	string foreignFieldName = member.Relation.FieldName;
+#>
+		internal bool <#= hasLoadedMemberName #> = false;
+		
+		private List<<#= member.Relation.ForeignType.FullName #>> <#= backingMemberName #>;
+		
+		public override List<<#= member.Relation.ForeignType.FullName #>> <#= member.Name #>
+		{
+			get
+			{
+				if (!<#= hasLoadedMemberName #>)
+				{
+					using (var db = this._Support.CreateConnection())
+					{
+						<#= backingMemberName #> = db.LoadModels<<#= member.Relation.ForeignType.FullName #>>(
+							new LoadOptions()
+							{
+								Where = "<#= foreignFieldName #> = @<#= foreignFieldName #>",
+								ParamValues = new object[] { <#= ModelInfo.ID.Name #> } 
+							}).ToList();
+					}
+					<#= hasLoadedMemberName #> = true;
+				}
+				
+				return <#= backingMemberName #>;
+			}
+			set
+			{
+				if (value == null)
+				{
+					if (<#= hasLoadedMemberName #>)
+					{
+						<#= backingMemberName #>.Clear();
+					}
+				}
+				else
+				{
+					<#= backingMemberName #> = value;
+				}
+				
+				<#= hasLoadedMemberName #> = true;
+			}
+		}
+<#
+}
+
+
+
+#>
+	}
+}
