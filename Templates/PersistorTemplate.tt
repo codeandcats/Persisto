@@ -187,7 +187,14 @@ for (var memberIndex = 0; memberIndex < ModelInfo.Members.Length; memberIndex++)
 
 	if (memberType == typeof(Guid))
 	{
-		method = string.Format("reader.IsDBNull({0}) ? default(Guid) : new Guid(reader.GetString({0}))", memberIndex);
+		if (member.DataType == DbType.Guid)
+		{
+			method = string.Format("reader.IsDBNull({0}) ? default(Guid) : new Guid(reader.GetValue({0}))", memberIndex);
+		}
+		else
+		{
+			method = string.Format("reader.IsDBNull({0}) ? default(Guid) : new Guid(reader.GetString({0}))", memberIndex);
+		}
 	}
 	else if (memberType == typeof(int))
 	{
