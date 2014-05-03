@@ -1,0 +1,24 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
+    <metadata>
+        <id>Persisto</id>
+        <version>0.0.1</version>
+        <title>Persisto</title>
+        <authors>codeandcats@gmail.com</authors>
+        <owners>codeandcats@gmail.com</owners>
+        <licenseUrl>https://github.com/codeandcats/Persisto/blob/master/LICENSE</licenseUrl>
+        <projectUrl>https://github.com/codeandcats/Persisto</projectUrl>
+        <requireLicenseAcceptance>false</requireLicenseAcceptance>
+        <description>Another .NET based ORM framework
+
+The main emphasis of this framework is on read and write performance, secondary will be convenience to the user to implement.</description>
+        <summary>Another .NET based ORM framework
+
+The main emphasis of this framework is on read and write performance, secondary will be convenience to the user to implement.</summary>
+        <copyright>Copyright codeandcats@gmail.com 2013</copyright>
+        <tags>orm object relational mapping database persistence</tags>
+    </metadata>
+    <files>
+        <file src="bin\Debug\Persisto.dll" target="lib\net45\Persisto.dll" />
+    </files>
+</package>

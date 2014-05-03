@@ -19,7 +19,7 @@ namespace Persisto.Templates
     /// Class to produce the template output
     /// </summary>
     
-    #line 1 "C:\Users\Ben Daniel\documents\Projects\Sandbox\Automedia\Persisto\Templates\GeneratedModelTemplate.tt"
+    #line 1 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\GeneratedModelTemplate.tt"
     [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.VisualStudio.TextTemplating", "11.0.0.0")]
     public partial class GeneratedModelTemplate : GeneratedModelTemplateBase
     {
@@ -30,26 +30,26 @@ namespace Persisto.Templates
         public virtual string TransformText()
         {
             this.Write("using System;\r\nusing System.Collections;\r\nusing System.Collections.Generic;\r\nusin" +
-                    "g System.Linq;\r\nusing Persisto;\r\n\r\nnamespace Persisto.Generated.Models\r\n{\r\n    p" +
-                    "ublic class ");
+                    "g System.Linq;\r\nusing Persisto;\r\n\r\nnamespace Persisto.Generated.Models\r\n{\r\n\tpubl" +
+                    "ic class ");
             
-            #line 16 "C:\Users\Ben Daniel\documents\Projects\Sandbox\Automedia\Persisto\Templates\GeneratedModelTemplate.tt"
+            #line 16 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\GeneratedModelTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(ModelInfo.GeneratedModelTypeName));
             
             #line default
             #line hidden
             this.Write(" : ");
             
-            #line 16 "C:\Users\Ben Daniel\documents\Projects\Sandbox\Automedia\Persisto\Templates\GeneratedModelTemplate.tt"
+            #line 16 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\GeneratedModelTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(ModelInfo.ModelType.FullName));
             
             #line default
             #line hidden
-            this.Write(", IGeneratedModel\r\n    {\r\n\t\tprivate ModelSupport __support = new ModelSupport();\r" +
-                    "\n\t\tpublic ModelSupport _Support\r\n\t\t{\r\n\t\t\tget { return __support; }\r\n\t\t\tset { __s" +
-                    "upport = value; }\r\n\t\t}\r\n\r\n");
+            this.Write(", IGeneratedModel\r\n\t{\r\n\t\tprivate ModelSupport __support = new ModelSupport();\r\n\t\t" +
+                    "public ModelSupport _Support\r\n\t\t{\r\n\t\t\tget { return __support; }\r\n\t\t\tset { __supp" +
+                    "ort = value; }\r\n\t\t}\r\n\r\n");
             
-            #line 25 "C:\Users\Ben Daniel\documents\Projects\Sandbox\Automedia\Persisto\Templates\GeneratedModelTemplate.tt"
+            #line 25 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\GeneratedModelTemplate.tt"
 
 foreach (DbMemberInfo member in ModelInfo.Members
 	.Where(m => m.Relation == null))
@@ -82,42 +82,42 @@ foreach (DbMemberInfo member in ModelInfo.Members
             #line hidden
             this.Write("\t\tpublic ");
             
-            #line 52 "C:\Users\Ben Daniel\documents\Projects\Sandbox\Automedia\Persisto\Templates\GeneratedModelTemplate.tt"
+            #line 52 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\GeneratedModelTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(memberModifiers + member.MemberType.FullName + " " + member.Name));
             
             #line default
             #line hidden
             this.Write("\r\n\t\t{\r\n\t\t\tget\r\n\t\t\t{\r\n\t\t\t\treturn ");
             
-            #line 56 "C:\Users\Ben Daniel\documents\Projects\Sandbox\Automedia\Persisto\Templates\GeneratedModelTemplate.tt"
+            #line 56 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\GeneratedModelTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(backingMemberName));
             
             #line default
             #line hidden
             this.Write(";\r\n\t\t\t}\r\n\t\t\tset\r\n\t\t\t{\r\n\t\t\t\tif (value == ");
             
-            #line 60 "C:\Users\Ben Daniel\documents\Projects\Sandbox\Automedia\Persisto\Templates\GeneratedModelTemplate.tt"
+            #line 60 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\GeneratedModelTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(backingMemberName));
             
             #line default
             #line hidden
             this.Write(")\r\n\t\t\t\t{\r\n\t\t\t\t\treturn;\r\n\t\t\t\t}\r\n\t\t\t\t\r\n\t\t\t\t");
             
-            #line 65 "C:\Users\Ben Daniel\documents\Projects\Sandbox\Automedia\Persisto\Templates\GeneratedModelTemplate.tt"
+            #line 65 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\GeneratedModelTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(backingMemberName));
             
             #line default
             #line hidden
             this.Write(" = value;\r\n\t\t\t\t\r\n\t\t\t\t_Support.FieldChanged(\"");
             
-            #line 67 "C:\Users\Ben Daniel\documents\Projects\Sandbox\Automedia\Persisto\Templates\GeneratedModelTemplate.tt"
+            #line 67 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\GeneratedModelTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(member.Name));
             
             #line default
             #line hidden
             this.Write("\");\r\n\t\t\t}\r\n\t\t}\r\n\r\n");
             
-            #line 71 "C:\Users\Ben Daniel\documents\Projects\Sandbox\Automedia\Persisto\Templates\GeneratedModelTemplate.tt"
+            #line 71 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\GeneratedModelTemplate.tt"
 
 }
 
@@ -126,7 +126,7 @@ foreach (DbMemberInfo member in ModelInfo.Members
             #line hidden
             this.Write("\t\t\r\n");
             
-            #line 75 "C:\Users\Ben Daniel\documents\Projects\Sandbox\Automedia\Persisto\Templates\GeneratedModelTemplate.tt"
+            #line 75 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\GeneratedModelTemplate.tt"
 
 foreach (DbMemberInfo member in ModelInfo.Members
 	.Where(m => m.Relation is DbRelation.ManyToOneAttribute)
@@ -148,21 +148,21 @@ foreach (DbMemberInfo member in ModelInfo.Members
             #line hidden
             this.Write("\t\tinternal ");
             
-            #line 91 "C:\Users\Ben Daniel\documents\Projects\Sandbox\Automedia\Persisto\Templates\GeneratedModelTemplate.tt"
+            #line 91 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\GeneratedModelTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(foreignMember.MemberType.FullName));
             
             #line default
             #line hidden
             this.Write(" ");
             
-            #line 91 "C:\Users\Ben Daniel\documents\Projects\Sandbox\Automedia\Persisto\Templates\GeneratedModelTemplate.tt"
+            #line 91 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\GeneratedModelTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(backingMemberName));
             
             #line default
             #line hidden
             this.Write(" = default(");
             
-            #line 91 "C:\Users\Ben Daniel\documents\Projects\Sandbox\Automedia\Persisto\Templates\GeneratedModelTemplate.tt"
+            #line 91 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\GeneratedModelTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(foreignMember.MemberType.FullName));
             
             #line default
@@ -171,28 +171,28 @@ foreach (DbMemberInfo member in ModelInfo.Members
                     "\t// that clearly won\'t be there. When LoadModel returns one of these\r\n\t\t// it wi" +
                     "ll set this property to false.\r\n\t\tinternal bool ");
             
-            #line 96 "C:\Users\Ben Daniel\documents\Projects\Sandbox\Automedia\Persisto\Templates\GeneratedModelTemplate.tt"
+            #line 96 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\GeneratedModelTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(hasLoadedField));
             
             #line default
             #line hidden
             this.Write(" = true;\r\n\t\t\r\n\t\tpublic override ");
             
-            #line 98 "C:\Users\Ben Daniel\documents\Projects\Sandbox\Automedia\Persisto\Templates\GeneratedModelTemplate.tt"
+            #line 98 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\GeneratedModelTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(member.MemberType.FullName));
             
             #line default
             #line hidden
             this.Write(" ");
             
-            #line 98 "C:\Users\Ben Daniel\documents\Projects\Sandbox\Automedia\Persisto\Templates\GeneratedModelTemplate.tt"
+            #line 98 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\GeneratedModelTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(member.Name));
             
             #line default
             #line hidden
             this.Write("\r\n\t\t{\r\n\t\t\tget\r\n\t\t\t{\r\n\t\t\t\tif (!");
             
-            #line 102 "C:\Users\Ben Daniel\documents\Projects\Sandbox\Automedia\Persisto\Templates\GeneratedModelTemplate.tt"
+            #line 102 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\GeneratedModelTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(hasLoadedField));
             
             #line default
@@ -200,84 +200,84 @@ foreach (DbMemberInfo member in ModelInfo.Members
             this.Write(")\r\n\t\t\t\t{\r\n\t\t\t\t\tusing (var db = this._Support.CreateConnection())\r\n\t\t\t\t\t{\r\n\t\t\t\t\t\tb" +
                     "ase.");
             
-            #line 106 "C:\Users\Ben Daniel\documents\Projects\Sandbox\Automedia\Persisto\Templates\GeneratedModelTemplate.tt"
+            #line 106 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\GeneratedModelTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(member.Name));
             
             #line default
             #line hidden
             this.Write(" = db.LoadModelById<");
             
-            #line 106 "C:\Users\Ben Daniel\documents\Projects\Sandbox\Automedia\Persisto\Templates\GeneratedModelTemplate.tt"
+            #line 106 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\GeneratedModelTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(member.MemberType.FullName));
             
             #line default
             #line hidden
             this.Write(">(");
             
-            #line 106 "C:\Users\Ben Daniel\documents\Projects\Sandbox\Automedia\Persisto\Templates\GeneratedModelTemplate.tt"
+            #line 106 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\GeneratedModelTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(backingMemberName));
             
             #line default
             #line hidden
             this.Write(");\r\n\t\t\t\t\t}\r\n\t\t\t\t\t");
             
-            #line 108 "C:\Users\Ben Daniel\documents\Projects\Sandbox\Automedia\Persisto\Templates\GeneratedModelTemplate.tt"
+            #line 108 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\GeneratedModelTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(hasLoadedField));
             
             #line default
             #line hidden
             this.Write(" = true;\r\n\t\t\t\t}\r\n\t\t\t\t\r\n\t\t\t\treturn base.");
             
-            #line 111 "C:\Users\Ben Daniel\documents\Projects\Sandbox\Automedia\Persisto\Templates\GeneratedModelTemplate.tt"
+            #line 111 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\GeneratedModelTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(member.Name));
             
             #line default
             #line hidden
             this.Write(";\r\n\t\t\t}\r\n\t\t\tset\r\n\t\t\t{\r\n\t\t\t\tif (value == null)\r\n\t\t\t\t{\r\n\t\t\t\t\t");
             
-            #line 117 "C:\Users\Ben Daniel\documents\Projects\Sandbox\Automedia\Persisto\Templates\GeneratedModelTemplate.tt"
+            #line 117 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\GeneratedModelTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(backingMemberName));
             
             #line default
             #line hidden
             this.Write(" = default(");
             
-            #line 117 "C:\Users\Ben Daniel\documents\Projects\Sandbox\Automedia\Persisto\Templates\GeneratedModelTemplate.tt"
+            #line 117 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\GeneratedModelTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(foreignMember.MemberType.FullName));
             
             #line default
             #line hidden
             this.Write(");\r\n\t\t\t\t}\r\n\t\t\t\telse\r\n\t\t\t\t{\r\n\t\t\t\t\t");
             
-            #line 121 "C:\Users\Ben Daniel\documents\Projects\Sandbox\Automedia\Persisto\Templates\GeneratedModelTemplate.tt"
+            #line 121 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\GeneratedModelTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(backingMemberName));
             
             #line default
             #line hidden
             this.Write(" = value.");
             
-            #line 121 "C:\Users\Ben Daniel\documents\Projects\Sandbox\Automedia\Persisto\Templates\GeneratedModelTemplate.tt"
+            #line 121 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\GeneratedModelTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(foreignMember.Name));
             
             #line default
             #line hidden
             this.Write(";\r\n\t\t\t\t}\r\n\t\t\t\t\r\n\t\t\t\tbase.");
             
-            #line 124 "C:\Users\Ben Daniel\documents\Projects\Sandbox\Automedia\Persisto\Templates\GeneratedModelTemplate.tt"
+            #line 124 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\GeneratedModelTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(member.Name));
             
             #line default
             #line hidden
             this.Write(" = value;\r\n\t\t\t\t\r\n\t\t\t\t");
             
-            #line 126 "C:\Users\Ben Daniel\documents\Projects\Sandbox\Automedia\Persisto\Templates\GeneratedModelTemplate.tt"
+            #line 126 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\GeneratedModelTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(hasLoadedField));
             
             #line default
             #line hidden
             this.Write(" = true;\r\n\t\t\t}\r\n\t\t}\r\n");
             
-            #line 129 "C:\Users\Ben Daniel\documents\Projects\Sandbox\Automedia\Persisto\Templates\GeneratedModelTemplate.tt"
+            #line 129 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\GeneratedModelTemplate.tt"
 
 }
 
@@ -298,130 +298,282 @@ foreach (IDbMemberInfo member in ModelInfo.Members
             #line hidden
             this.Write("\t\tinternal bool ");
             
-            #line 144 "C:\Users\Ben Daniel\documents\Projects\Sandbox\Automedia\Persisto\Templates\GeneratedModelTemplate.tt"
+            #line 144 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\GeneratedModelTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(hasLoadedMemberName));
             
             #line default
             #line hidden
             this.Write(" = false;\r\n\t\t\r\n\t\tprivate List<");
             
-            #line 146 "C:\Users\Ben Daniel\documents\Projects\Sandbox\Automedia\Persisto\Templates\GeneratedModelTemplate.tt"
+            #line 146 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\GeneratedModelTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(member.Relation.ForeignType.FullName));
             
             #line default
             #line hidden
             this.Write("> ");
             
-            #line 146 "C:\Users\Ben Daniel\documents\Projects\Sandbox\Automedia\Persisto\Templates\GeneratedModelTemplate.tt"
+            #line 146 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\GeneratedModelTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(backingMemberName));
             
             #line default
             #line hidden
             this.Write(";\r\n\t\t\r\n\t\tpublic override List<");
             
-            #line 148 "C:\Users\Ben Daniel\documents\Projects\Sandbox\Automedia\Persisto\Templates\GeneratedModelTemplate.tt"
+            #line 148 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\GeneratedModelTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(member.Relation.ForeignType.FullName));
             
             #line default
             #line hidden
             this.Write("> ");
             
-            #line 148 "C:\Users\Ben Daniel\documents\Projects\Sandbox\Automedia\Persisto\Templates\GeneratedModelTemplate.tt"
+            #line 148 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\GeneratedModelTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(member.Name));
             
             #line default
             #line hidden
             this.Write("\r\n\t\t{\r\n\t\t\tget\r\n\t\t\t{\r\n\t\t\t\tif (!");
             
-            #line 152 "C:\Users\Ben Daniel\documents\Projects\Sandbox\Automedia\Persisto\Templates\GeneratedModelTemplate.tt"
+            #line 152 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\GeneratedModelTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(hasLoadedMemberName));
             
             #line default
             #line hidden
             this.Write(")\r\n\t\t\t\t{\r\n\t\t\t\t\tusing (var db = this._Support.CreateConnection())\r\n\t\t\t\t\t{\r\n\t\t\t\t\t\t");
             
-            #line 156 "C:\Users\Ben Daniel\documents\Projects\Sandbox\Automedia\Persisto\Templates\GeneratedModelTemplate.tt"
+            #line 156 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\GeneratedModelTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(backingMemberName));
             
             #line default
             #line hidden
             this.Write(" = db.LoadModels<");
             
-            #line 156 "C:\Users\Ben Daniel\documents\Projects\Sandbox\Automedia\Persisto\Templates\GeneratedModelTemplate.tt"
+            #line 156 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\GeneratedModelTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(member.Relation.ForeignType.FullName));
             
             #line default
             #line hidden
             this.Write(">(\r\n\t\t\t\t\t\t\tnew LoadOptions()\r\n\t\t\t\t\t\t\t{\r\n\t\t\t\t\t\t\t\tWhere = \"");
             
-            #line 159 "C:\Users\Ben Daniel\documents\Projects\Sandbox\Automedia\Persisto\Templates\GeneratedModelTemplate.tt"
+            #line 159 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\GeneratedModelTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(foreignFieldName));
             
             #line default
             #line hidden
             this.Write(" = @");
             
-            #line 159 "C:\Users\Ben Daniel\documents\Projects\Sandbox\Automedia\Persisto\Templates\GeneratedModelTemplate.tt"
+            #line 159 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\GeneratedModelTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(foreignFieldName));
             
             #line default
             #line hidden
             this.Write("\",\r\n\t\t\t\t\t\t\t\tParamValues = new object[] { ");
             
-            #line 160 "C:\Users\Ben Daniel\documents\Projects\Sandbox\Automedia\Persisto\Templates\GeneratedModelTemplate.tt"
+            #line 160 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\GeneratedModelTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(ModelInfo.ID.Name));
             
             #line default
             #line hidden
             this.Write(" } \r\n\t\t\t\t\t\t\t}).ToList();\r\n\t\t\t\t\t}\r\n\t\t\t\t\t");
             
-            #line 163 "C:\Users\Ben Daniel\documents\Projects\Sandbox\Automedia\Persisto\Templates\GeneratedModelTemplate.tt"
+            #line 163 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\GeneratedModelTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(hasLoadedMemberName));
             
             #line default
             #line hidden
             this.Write(" = true;\r\n\t\t\t\t}\r\n\t\t\t\t\r\n\t\t\t\treturn ");
             
-            #line 166 "C:\Users\Ben Daniel\documents\Projects\Sandbox\Automedia\Persisto\Templates\GeneratedModelTemplate.tt"
+            #line 166 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\GeneratedModelTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(backingMemberName));
             
             #line default
             #line hidden
             this.Write(";\r\n\t\t\t}\r\n\t\t\tset\r\n\t\t\t{\r\n\t\t\t\tif (value == null)\r\n\t\t\t\t{\r\n\t\t\t\t\tif (");
             
-            #line 172 "C:\Users\Ben Daniel\documents\Projects\Sandbox\Automedia\Persisto\Templates\GeneratedModelTemplate.tt"
+            #line 172 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\GeneratedModelTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(hasLoadedMemberName));
             
             #line default
             #line hidden
             this.Write(")\r\n\t\t\t\t\t{\r\n\t\t\t\t\t\t");
             
-            #line 174 "C:\Users\Ben Daniel\documents\Projects\Sandbox\Automedia\Persisto\Templates\GeneratedModelTemplate.tt"
+            #line 174 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\GeneratedModelTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(backingMemberName));
             
             #line default
             #line hidden
             this.Write(".Clear();\r\n\t\t\t\t\t}\r\n\t\t\t\t}\r\n\t\t\t\telse\r\n\t\t\t\t{\r\n\t\t\t\t\t");
             
-            #line 179 "C:\Users\Ben Daniel\documents\Projects\Sandbox\Automedia\Persisto\Templates\GeneratedModelTemplate.tt"
+            #line 179 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\GeneratedModelTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(backingMemberName));
             
             #line default
             #line hidden
             this.Write(" = value;\r\n\t\t\t\t}\r\n\t\t\t\t\r\n\t\t\t\t");
             
-            #line 182 "C:\Users\Ben Daniel\documents\Projects\Sandbox\Automedia\Persisto\Templates\GeneratedModelTemplate.tt"
+            #line 182 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\GeneratedModelTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(hasLoadedMemberName));
             
             #line default
             #line hidden
             this.Write(" = true;\r\n\t\t\t}\r\n\t\t}\r\n");
             
-            #line 185 "C:\Users\Ben Daniel\documents\Projects\Sandbox\Automedia\Persisto\Templates\GeneratedModelTemplate.tt"
+            #line 185 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\GeneratedModelTemplate.tt"
 
 }
 
 
+foreach (IDbMemberInfo member in ModelInfo.Members
+	.Where(m => m.Relation is DbRelation.ManyToManyAttribute)
+	.Where(m => m.Relation.LoadOnDemand))
+{
+	string backingMemberName = 
+		member.Name.ToLower().Substring(0, 1) +
+		member.Name.ToLower().Substring(1);
+
+	string hasLoadedMemberName = "HasLoaded" + member.Name;
+
+	DbRelation.ManyToManyAttribute manyToMany = member.Relation as DbRelation.ManyToManyAttribute;
+
+	IDbModelInfo foreignModelInfo = DbModelInfo.Get(manyToMany.ForeignType);
+
+            
+            #line default
+            #line hidden
+            this.Write("\t\tinternal bool ");
+            
+            #line 203 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\GeneratedModelTemplate.tt"
+            this.Write(this.ToStringHelper.ToStringWithCulture(hasLoadedMemberName));
+            
+            #line default
+            #line hidden
+            this.Write(" = false;\r\n\t\t\r\n\t\tprivate List<");
+            
+            #line 205 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\GeneratedModelTemplate.tt"
+            this.Write(this.ToStringHelper.ToStringWithCulture(member.Relation.ForeignType.FullName));
+            
+            #line default
+            #line hidden
+            this.Write("> ");
+            
+            #line 205 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\GeneratedModelTemplate.tt"
+            this.Write(this.ToStringHelper.ToStringWithCulture(backingMemberName));
+            
+            #line default
+            #line hidden
+            this.Write(";\r\n\t\t\r\n\t\tpublic override List<");
+            
+            #line 207 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\GeneratedModelTemplate.tt"
+            this.Write(this.ToStringHelper.ToStringWithCulture(member.Relation.ForeignType.FullName));
+            
+            #line default
+            #line hidden
+            this.Write("> ");
+            
+            #line 207 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\GeneratedModelTemplate.tt"
+            this.Write(this.ToStringHelper.ToStringWithCulture(member.Name));
+            
+            #line default
+            #line hidden
+            this.Write("\r\n\t\t{\r\n\t\t\tget\r\n\t\t\t{\r\n\t\t\t\tif (!");
+            
+            #line 211 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\GeneratedModelTemplate.tt"
+            this.Write(this.ToStringHelper.ToStringWithCulture(hasLoadedMemberName));
+            
+            #line default
+            #line hidden
+            this.Write(")\r\n\t\t\t\t{\r\n\t\t\t\t\tusing (var db = this._Support.CreateConnection())\r\n\t\t\t\t\t{\r\n\t\t\t\t\t\t");
+            
+            #line 215 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\GeneratedModelTemplate.tt"
+            this.Write(this.ToStringHelper.ToStringWithCulture(backingMemberName));
+            
+            #line default
+            #line hidden
+            this.Write(" = db.LoadModels<");
+            
+            #line 215 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\GeneratedModelTemplate.tt"
+            this.Write(this.ToStringHelper.ToStringWithCulture(member.Relation.ForeignType.FullName));
+            
+            #line default
+            #line hidden
+            this.Write(">(\r\n\t\t\t\t\t\t\tnew LoadOptions()\r\n\t\t\t\t\t\t\t{\r\n\t\t\t\t\t\t\t\tJoins = \"");
+            
+            #line 218 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\GeneratedModelTemplate.tt"
+            this.Write(this.ToStringHelper.ToStringWithCulture(string.Format("JOIN {0} ON {0}.{1} = {2}.{3}",
+									manyToMany.TableName,
+									manyToMany.ForeignKey2,
+									foreignModelInfo.TableName,
+									foreignModelInfo.ID.FieldName)));
+            
+            #line default
+            #line hidden
+            this.Write("\",\r\n\r\n\t\t\t\t\t\t\t\tWhere = \"");
+            
+            #line 224 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\GeneratedModelTemplate.tt"
+            this.Write(this.ToStringHelper.ToStringWithCulture(manyToMany.TableName + "." + manyToMany.ForeignKey1));
+            
+            #line default
+            #line hidden
+            this.Write(" = @");
+            
+            #line 224 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\GeneratedModelTemplate.tt"
+            this.Write(this.ToStringHelper.ToStringWithCulture(manyToMany.ForeignKey1));
+            
+            #line default
+            #line hidden
+            this.Write("\",\r\n\r\n\t\t\t\t\t\t\t\tParamValues = new object[] { ");
+            
+            #line 226 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\GeneratedModelTemplate.tt"
+            this.Write(this.ToStringHelper.ToStringWithCulture(ModelInfo.ID.Name));
+            
+            #line default
+            #line hidden
+            this.Write(" }\r\n\t\t\t\t\t\t\t}).ToList();\r\n\t\t\t\t\t}\r\n\t\t\t\t\t");
+            
+            #line 229 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\GeneratedModelTemplate.tt"
+            this.Write(this.ToStringHelper.ToStringWithCulture(hasLoadedMemberName));
+            
+            #line default
+            #line hidden
+            this.Write(" = true;\r\n\t\t\t\t}\r\n\t\t\t\t\r\n\t\t\t\treturn ");
+            
+            #line 232 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\GeneratedModelTemplate.tt"
+            this.Write(this.ToStringHelper.ToStringWithCulture(backingMemberName));
+            
+            #line default
+            #line hidden
+            this.Write(";\r\n\t\t\t}\r\n\t\t\tset\r\n\t\t\t{\r\n\t\t\t\tif (value == null)\r\n\t\t\t\t{\r\n\t\t\t\t\tif (");
+            
+            #line 238 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\GeneratedModelTemplate.tt"
+            this.Write(this.ToStringHelper.ToStringWithCulture(hasLoadedMemberName));
+            
+            #line default
+            #line hidden
+            this.Write(")\r\n\t\t\t\t\t{\r\n\t\t\t\t\t\t");
+            
+            #line 240 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\GeneratedModelTemplate.tt"
+            this.Write(this.ToStringHelper.ToStringWithCulture(backingMemberName));
+            
+            #line default
+            #line hidden
+            this.Write(".Clear();\r\n\t\t\t\t\t}\r\n\t\t\t\t}\r\n\t\t\t\telse\r\n\t\t\t\t{\r\n\t\t\t\t\t");
+            
+            #line 245 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\GeneratedModelTemplate.tt"
+            this.Write(this.ToStringHelper.ToStringWithCulture(backingMemberName));
+            
+            #line default
+            #line hidden
+            this.Write(" = value;\r\n\t\t\t\t}\r\n\t\t\t\t\r\n\t\t\t\t");
+            
+            #line 248 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\GeneratedModelTemplate.tt"
+            this.Write(this.ToStringHelper.ToStringWithCulture(hasLoadedMemberName));
+            
+            #line default
+            #line hidden
+            this.Write(" = true;\r\n\t\t\t}\r\n\t\t}\r\n");
+            
+            #line 251 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\GeneratedModelTemplate.tt"
+
+}
 
 
             
@@ -431,7 +583,7 @@ foreach (IDbMemberInfo member in ModelInfo.Members
             return this.GenerationEnvironment.ToString();
         }
         
-        #line 1 "C:\Users\Ben Daniel\documents\Projects\Sandbox\Automedia\Persisto\Templates\GeneratedModelTemplate.tt"
+        #line 1 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\GeneratedModelTemplate.tt"
 
 private global::Persisto.IDbModelInfo _ModelInfoField;
 

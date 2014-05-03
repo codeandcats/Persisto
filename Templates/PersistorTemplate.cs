@@ -32,45 +32,45 @@ namespace Persisto.Templates
         public virtual string TransformText()
         {
             this.Write("using System;\r\nusing System.Collections.Generic;\r\nusing System.Linq;\r\nusing Syste" +
-                    "m.Text;\r\nusing System.Diagnostics;\r\nusing System.Data.Common;\r\nusing Persisto;\r\n" +
-                    "using ");
+                    "m.Text;\r\nusing System.Diagnostics;\r\nusing System.Data;\r\nusing System.Data.Common" +
+                    ";\r\nusing Persisto;\r\nusing ");
             
-            #line 18 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
+            #line 19 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(ModelInfo.ModelType.Namespace));
             
             #line default
             #line hidden
             this.Write(";\r\n\r\nnamespace Persisto.Generated.Persistors\r\n{\r\n\tpublic class ");
             
-            #line 22 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
+            #line 23 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(ModelInfo.ModelType.Name));
             
             #line default
             #line hidden
             this.Write("Persistor : PersistorBase, IPersistor<");
             
-            #line 22 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
+            #line 23 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(ModelInfo.ModelType.FullName));
             
             #line default
             #line hidden
             this.Write(">\r\n\t{\r\n\t\tpublic ");
             
-            #line 24 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
+            #line 25 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(ModelInfo.ModelType.Name));
             
             #line default
             #line hidden
             this.Write("Persistor(IDbModelInfo<");
             
-            #line 24 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
+            #line 25 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(ModelInfo.ModelType.Name));
             
             #line default
             #line hidden
             this.Write("> modelInfo)\r\n\t\t\t: base(modelInfo)\r\n\t\t{\r\n\t\t\tModelInfo = modelInfo;\r\n\r\n");
             
-            #line 29 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
+            #line 30 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
 
 var membersWithFields = 
 	ModelInfo.Members
@@ -87,14 +87,14 @@ foreach (IDbMemberInfo member in ModelInfo.Members)
             #line hidden
             this.Write("\t\t}\r\n\t\t\r\n\t\tnew public IDbModelInfo<");
             
-            #line 42 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
+            #line 43 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(ModelInfo.ModelType.Name));
             
             #line default
             #line hidden
             this.Write("> ModelInfo { get; private set; }\r\n\t\t\r\n");
             
-            #line 44 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
+            #line 45 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
 
 foreach (IDbMemberInfo member in ModelInfo.Members)
 {
@@ -106,7 +106,7 @@ foreach (IDbMemberInfo member in ModelInfo.Members)
             #line hidden
             this.Write("\r\n\t\tnew public IEnumerable<");
             
-            #line 51 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
+            #line 52 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(ModelInfo.ModelType.FullName));
             
             #line default
@@ -114,7 +114,7 @@ foreach (IDbMemberInfo member in ModelInfo.Members)
             this.Write("> LoadModels(\r\n\t\t\tSystem.Data.Common.DbConnection db,\r\n\t\t\tPersisto.LoadOptions op" +
                     "tions)\r\n\t\t{\r\n\t\t\tvar models = new List<");
             
-            #line 55 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
+            #line 56 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(ModelInfo.ModelType.FullName));
             
             #line default
@@ -131,7 +131,7 @@ foreach (IDbMemberInfo member in ModelInfo.Members)
 			{
 ");
             
-            #line 65 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
+            #line 66 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
 
 // Build sql for loading models
 var loadSql = new StringBuilder("SELECT " + ModelInfo.TableName + ".");
@@ -145,7 +145,7 @@ loadSql.Append(" FROM " + ModelInfo.TableName);
             #line hidden
             this.Write("\t\t\t\tvar loadSql = new StringBuilder(@\"");
             
-            #line 73 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
+            #line 74 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(loadSql.ToString()));
             
             #line default
@@ -193,7 +193,7 @@ loadSql.Append(" FROM " + ModelInfo.TableName);
 					{
 						var model = new Persisto.Generated.Models.");
             
-            #line 114 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
+            #line 115 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(ModelInfo.GeneratedModelTypeName));
             
             #line default
@@ -201,7 +201,7 @@ loadSql.Append(" FROM " + ModelInfo.TableName);
             this.Write("();\r\n\t\t\t\t\t\t\r\n\t\t\t\t\t\tmodel._Support.CreateConnectionFunc = createConnection;\r\n\t\t\t\t\t" +
                     "\t\r\n");
             
-            #line 118 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
+            #line 119 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
 
 for (var memberIndex = 0; memberIndex < ModelInfo.Members.Length; memberIndex++)
 {
@@ -255,42 +255,42 @@ for (var memberIndex = 0; memberIndex < ModelInfo.Members.Length; memberIndex++)
             #line hidden
             this.Write("\t\t\t\t\t\tmodel.");
             
-            #line 166 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
+            #line 167 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(member.Name));
             
             #line default
             #line hidden
             this.Write(" = db.LoadModels<");
             
-            #line 166 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
+            #line 167 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(member.Relation.ForeignType.FullName));
             
             #line default
             #line hidden
             this.Write(">(\r\n\t\t\t\t\t\t\tnew LoadOptions()\r\n\t\t\t\t\t\t\t{\r\n\t\t\t\t\t\t\t\tWhere = \"");
             
-            #line 169 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
+            #line 170 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(member.FieldName));
             
             #line default
             #line hidden
             this.Write(" = @");
             
-            #line 169 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
+            #line 170 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(member.FieldName));
             
             #line default
             #line hidden
             this.Write("\",\r\n\t\t\t\t\t\t\t\tParamValues = new object[] { model.");
             
-            #line 170 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
+            #line 171 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(ModelInfo.ID.Name));
             
             #line default
             #line hidden
             this.Write(" } \r\n\t\t\t\t\t\t\t}).ToList();\r\n");
             
-            #line 172 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
+            #line 173 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
 
 			}
 			continue;
@@ -420,7 +420,7 @@ for (var memberIndex = 0; memberIndex < ModelInfo.Members.Length; memberIndex++)
             this.Write("\r\n\t\t\t\t\t\tmodel._Support.ExistsInDatabase = true;\r\n\t\t\t\t\t\t\r\n\t\t\t\t\t\tmodels.Add(model);" +
                     "\r\n\t\t\t\t\t}\r\n\t\t\t\t}\r\n\t\t\t}\r\n\r\n\t\t\treturn models;\r\n\t\t}\r\n\r\n");
             
-            #line 306 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
+            #line 307 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
 
 
 Action<bool, bool> setFields =
@@ -540,7 +540,7 @@ Action<bool, bool> setFields =
             #line hidden
             this.Write("\t\t\r\n\t\tnew public ");
             
-            #line 421 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
+            #line 422 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(ModelInfo.ModelType.FullName));
             
             #line default
@@ -560,7 +560,7 @@ Action<bool, bool> setFields =
 			System.Data.Common.DbConnection db,
 			");
             
-            #line 434 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
+            #line 435 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(ModelInfo.ModelType.FullName));
             
             #line default
@@ -569,7 +569,7 @@ Action<bool, bool> setFields =
                     "delInfo.Persistor.InsertModel(db, model);\r\n\t\t\t}\r\n\t\t\t\r\n\t\t\tusing (var command = db" +
                     ".CreateCommand())\r\n\t\t\t{\r\n");
             
-            #line 443 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
+            #line 444 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
 
 
 StringBuilder insertSql = new StringBuilder("INSERT INTO " + ModelInfo.TableName);
@@ -583,14 +583,14 @@ insertSql.Append(" VALUES (@" + string.Join(", @", membersWithFields.Select(m =>
             #line hidden
             this.Write("\t\t\t\tcommand.CommandText = \"");
             
-            #line 451 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
+            #line 452 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(insertSql.ToString()));
             
             #line default
             #line hidden
             this.Write("\";\r\n\r\n");
             
-            #line 453 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
+            #line 454 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
 
 foreach (IDbMemberInfo member in ModelInfo.Members.Where(m => m.Incrementor != null))
 {
@@ -606,7 +606,7 @@ setFields(true, true);
             #line hidden
             this.Write("\r\n\t\t\t\tcommand.ExecuteNonQuery();\r\n\r\n");
             
-            #line 466 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
+            #line 467 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
 
 foreach (IDbMemberInfo member in ModelInfo.Members.Where(m => m.Incrementor != null))
 {
@@ -621,7 +621,7 @@ foreach (IDbMemberInfo member in ModelInfo.Members.Where(m => m.Incrementor != n
                     "\r\n\t\t\t}\r\n\t\t}\r\n\t\t\r\n\t\tpublic void UpdateModel(\r\n\t\t\tSystem.Data.Common.DbConnection " +
                     "db,\r\n\t\t\t");
             
-            #line 481 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
+            #line 482 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(ModelInfo.ModelType.FullName));
             
             #line default
@@ -630,7 +630,7 @@ foreach (IDbMemberInfo member in ModelInfo.Members.Where(m => m.Incrementor != n
                     "delInfo.Persistor.UpdateModel(db, model);\r\n\t\t\t}\r\n\t\t\t\r\n\t\t\tusing (var command = db" +
                     ".CreateCommand())\r\n\t\t\t{\r\n");
             
-            #line 490 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
+            #line 491 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
 
 StringBuilder updateSql = new StringBuilder("UPDATE " + ModelInfo.TableName + " SET ");
 updateSql.Append(string.Join(", ", membersWithFields
@@ -643,14 +643,14 @@ updateSql.Append(" WHERE " + string.Format("{0} = @{0}", ModelInfo.ID.FieldName)
             #line hidden
             this.Write("\t\t\t\tcommand.CommandText = @\"");
             
-            #line 497 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
+            #line 498 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(updateSql.ToString()));
             
             #line default
             #line hidden
             this.Write("\";\r\n\t\t\t\t\r\n");
             
-            #line 499 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
+            #line 500 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
  setFields(false, false); 
             
             #line default
@@ -670,7 +670,7 @@ updateSql.Append(" WHERE " + string.Format("{0} = @{0}", ModelInfo.ID.FieldName)
 			System.Data.Common.DbConnection db,
 			");
             
-            #line 513 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
+            #line 514 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(ModelInfo.ModelType.FullName));
             
             #line default
@@ -678,42 +678,42 @@ updateSql.Append(" WHERE " + string.Format("{0} = @{0}", ModelInfo.ID.FieldName)
             this.Write(" model)\r\n\t\t{\r\n\t\t\tusing (var command = db.CreateCommand())\r\n\t\t\t{\r\n\t\t\t\tcommand.Comm" +
                     "andText = @\"DELETE FROM ");
             
-            #line 517 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
+            #line 518 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(ModelInfo.TableName));
             
             #line default
             #line hidden
             this.Write(" WHERE ");
             
-            #line 517 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
+            #line 518 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(ModelInfo.ID.FieldName));
             
             #line default
             #line hidden
             this.Write(" = @");
             
-            #line 517 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
+            #line 518 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(ModelInfo.ID.FieldName));
             
             #line default
             #line hidden
             this.Write("\";\r\n\t\t\t\t\r\n\t\t\t\tcommand.CreateParameter(\r\n\t\t\t\t\t\"@");
             
-            #line 520 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
+            #line 521 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(ModelInfo.ID.FieldName));
             
             #line default
             #line hidden
             this.Write("\",\r\n\t\t\t\t\tSystem.Data.DbType.");
             
-            #line 521 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
+            #line 522 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(ModelInfo.ID.DataType.ToString()));
             
             #line default
             #line hidden
             this.Write(",\r\n\t\t\t\t\tmodel.");
             
-            #line 522 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
+            #line 523 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(ModelInfo.ID.Name));
             
             #line default
