@@ -225,16 +225,95 @@ namespace Persisto
 			template.Initialize();
 
 			var source = template.TransformText();
-
+			
 			return source;
 		}
+
+		/*
+		internal static string GenerateModelSelectSql(IDbModelInfo modelInfo)
+		{
+			var baseModelInfos = new Stack<IDbModelInfo>();
+
+			var info = modelInfo;
+
+			while (info != null)
+			{
+				baseModelInfos.Push(info);
+				info = info.BaseModelInfo;
+			}
+			
+			var selectSql = new StringBuilder();
+			selectSql.AppendLine("SELECT ");
+
+			var fromSql = new StringBuilder();
+
+			var addedFirstTable = false;
+			IDbModelInfo firstTable;
+
+			while (baseModelInfos.Count > 0)
+			{
+				info = baseModelInfos.Pop();
+
+				selectSql.Append("\t");
+
+				var addedFirstField = false;
+
+				foreach (var memberInfo in info.Members.Where(m => m.IsBackedByField))
+				{
+					if (addedFirstField)
+					{
+						selectSql.Append(", ");
+					}
+					else
+					{
+						addedFirstField = true;
+					}
+					selectSql.Append(info.TableName + "." + memberInfo.FieldName);
+				}
+
+				if (baseModelInfos.Count > 0)
+				{
+					selectSql.Append(", ");
+				}
+
+				if (addedFirstTable)
+				{
+					fromSql.AppendLine(string.Format(
+						"JOIN {0} ON ({0}.{1} = {2}.{3}){4}",
+						info.TableName,
+						info.ID.FieldName,
+						info.BaseModelInfo.TableName,
+						info.BaseModelInfo.ID.FieldName,
+						string.IsNullOrWhiteSpace(info.Filter) ? "" : " AND (" + info.Filter + ")"));
+				}
+				else
+				{
+					firstTable = info;
+					fromSql.AppendLine("FROM " + info.TableName);
+				}
+
+				foreach (var subTypeInfo in info.Descendents)
+				{
+					fromSql.AppendLine(string.Format(
+						"LEFT OUTER JOIN {0} ON ({0}.{1} = {2}.{3}){4}",
+						subTypeInfo.TableName,
+						subTypeInfo.ID.FieldName,
+						info.TableName,
+						info.ID.FieldName,
+						string.IsNullOrWhiteSpace(subTypeInfo.Filter) ? "" : " AND (" + subTypeInfo.Filter + ")"));
+				}
+			}
+
+			return selectSql.ToString() + "\n" + fromSql.ToString();
+		}
+		*/
 
 		private static void DebugError(
 			CompilerResults results,
 			string generatedTypeSource,
 			string persistorSource)
 		{
-			var fileName = @"C:\Users\Ben Daniel\Desktop\Debug.txt";
+			var fileName = Path.GetTempFileName();
 
 			var sb = new StringBuilder();
 

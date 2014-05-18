@@ -33,44 +33,44 @@ namespace Persisto.Templates
         {
             this.Write("using System;\r\nusing System.Collections.Generic;\r\nusing System.Linq;\r\nusing Syste" +
                     "m.Text;\r\nusing System.Diagnostics;\r\nusing System.Data;\r\nusing System.Data.Common" +
-                    ";\r\nusing Persisto;\r\nusing ");
+                    ";\r\nusing System.Reflection;\r\nusing Persisto;\r\nusing ");
             
-            #line 19 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
+            #line 20 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(ModelInfo.ModelType.Namespace));
             
             #line default
             #line hidden
             this.Write(";\r\n\r\nnamespace Persisto.Generated.Persistors\r\n{\r\n\tpublic class ");
             
-            #line 23 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
+            #line 24 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(ModelInfo.ModelType.Name));
             
             #line default
             #line hidden
             this.Write("Persistor : PersistorBase, IPersistor<");
             
-            #line 23 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
+            #line 24 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(ModelInfo.ModelType.FullName));
             
             #line default
             #line hidden
             this.Write(">\r\n\t{\r\n\t\tpublic ");
             
-            #line 25 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
+            #line 26 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(ModelInfo.ModelType.Name));
             
             #line default
             #line hidden
             this.Write("Persistor(IDbModelInfo<");
             
-            #line 25 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
+            #line 26 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(ModelInfo.ModelType.Name));
             
             #line default
             #line hidden
             this.Write("> modelInfo)\r\n\t\t\t: base(modelInfo)\r\n\t\t{\r\n\t\t\tModelInfo = modelInfo;\r\n\r\n");
             
-            #line 30 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
+            #line 31 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
 
 var membersWithFields = 
 	ModelInfo.Members
@@ -87,14 +87,14 @@ foreach (IDbMemberInfo member in ModelInfo.Members)
             #line hidden
             this.Write("\t\t}\r\n\t\t\r\n\t\tnew public IDbModelInfo<");
             
-            #line 43 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
+            #line 44 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(ModelInfo.ModelType.Name));
             
             #line default
             #line hidden
             this.Write("> ModelInfo { get; private set; }\r\n\t\t\r\n");
             
-            #line 45 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
+            #line 46 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
 
 foreach (IDbMemberInfo member in ModelInfo.Members)
 {
@@ -106,7 +106,7 @@ foreach (IDbMemberInfo member in ModelInfo.Members)
             #line hidden
             this.Write("\r\n\t\tnew public IEnumerable<");
             
-            #line 52 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
+            #line 53 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(ModelInfo.ModelType.FullName));
             
             #line default
@@ -114,7 +114,7 @@ foreach (IDbMemberInfo member in ModelInfo.Members)
             this.Write("> LoadModels(\r\n\t\t\tSystem.Data.Common.DbConnection db,\r\n\t\t\tPersisto.LoadOptions op" +
                     "tions)\r\n\t\t{\r\n\t\t\tvar models = new List<");
             
-            #line 56 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
+            #line 57 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(ModelInfo.ModelType.FullName));
             
             #line default
@@ -131,22 +131,129 @@ foreach (IDbMemberInfo member in ModelInfo.Members)
 			{
 ");
             
-            #line 66 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
+            #line 67 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
 
 // Build sql for loading models
-var loadSql = new StringBuilder("SELECT " + ModelInfo.TableName + ".");
 
-loadSql.Append(string.Join(", " + ModelInfo.TableName + ".", membersWithFields.Select(m => m.FieldName).ToArray()));
+var baseModelInfos = new Stack<IDbModelInfo>();
 
-loadSql.Append(" FROM " + ModelInfo.TableName);
+var info = ModelInfo;
+IDbModelInfo veryBaseModelInfo = null;
+
+while (info != null)
+{
+	baseModelInfos.Push(info);
+	veryBaseModelInfo = info;
+	info = info.BaseModelInfo;
+}
+
+var selectSql = new StringBuilder();
+selectSql.Append("SELECT ");
+
+var fromSql = new StringBuilder();
+
+var addedFirstTable = false;
+IDbModelInfo firstTable;
+
+var fieldOffsets = new Dictionary<IDbModelInfo, int>();
+var fieldOffset = 0;
+
+var familyOfModelInfos = new List<IDbModelInfo>();
+
+var addedFirstField = false;
+
+if (!string.IsNullOrWhiteSpace(veryBaseModelInfo.TypeNameFieldName))
+{
+	selectSql.Append(veryBaseModelInfo.TableName + "." + veryBaseModelInfo.TypeNameFieldName);
+	addedFirstField = true;
+	fieldOffset++;
+}
+
+while (baseModelInfos.Count > 0)
+{
+	info = baseModelInfos.Pop();
+
+	familyOfModelInfos.Add(info);
+
+	fieldOffsets.Add(info, fieldOffset);
+
+	foreach (var memberInfo in info.Members.Where(m => m.IsBackedByField))
+	{
+		if (addedFirstField)
+		{
+			selectSql.Append(", ");
+		}
+		else
+		{
+			addedFirstField = true;
+		}
+		selectSql.Append(info.TableName + "." + memberInfo.FieldName);
+		fieldOffset++;
+	}
+
+	if (addedFirstTable)
+	{
+		fromSql.Append(string.Format(
+			" JOIN {0} ON ({0}.{1} = {2}.{3}){4}",
+			info.TableName,
+			info.ID.FieldName,
+			info.BaseModelInfo.TableName,
+			info.BaseModelInfo.ID.FieldName,
+			string.IsNullOrWhiteSpace(info.Filter) ? "" : " AND (" + info.Filter + ")"));
+	}
+	else
+	{
+		firstTable = info;
+		addedFirstTable = true;
+		fromSql.Append(" FROM " + info.TableName);
+	}
+}
+
+Action<IDbModelInfo> addDescendents = null;
+
+addDescendents = (IDbModelInfo modelInfo) =>
+{
+	foreach (var subTypeInfo in modelInfo.Descendents)
+	{
+		familyOfModelInfos.Add(subTypeInfo);
+
+		fieldOffsets.Add(subTypeInfo, fieldOffset);
+
+		foreach (var memberInfo in subTypeInfo.Members.Where(m => m.IsBackedByField))
+		{
+			if (addedFirstField)
+			{
+				selectSql.Append(", ");
+			}
+			else
+			{
+				addedFirstField = true;
+			}
+			selectSql.Append(subTypeInfo.TableName + "." + memberInfo.FieldName);
+			fieldOffset++;
+		}
+
+		fromSql.Append(string.Format(
+			" LEFT OUTER JOIN {0} ON ({0}.{1} = {2}.{3}){4}",
+			subTypeInfo.TableName,
+			subTypeInfo.ID.FieldName,
+			modelInfo.TableName,
+			modelInfo.ID.FieldName,
+			string.IsNullOrWhiteSpace(subTypeInfo.Filter) ? "" : " AND (" + subTypeInfo.Filter + ")"));
+
+		addDescendents(subTypeInfo);
+	}
+};
+
+addDescendents(ModelInfo);
 
             
             #line default
             #line hidden
             this.Write("\t\t\t\tvar loadSql = new StringBuilder(@\"");
             
-            #line 74 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
-            this.Write(this.ToStringHelper.ToStringWithCulture(loadSql.ToString()));
+            #line 182 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
+            this.Write(this.ToStringHelper.ToStringWithCulture((selectSql.ToString() + " " + fromSql.ToString()).Replace("\n", " ").Replace("\r", " ")));
             
             #line default
             #line hidden
@@ -186,27 +293,76 @@ loadSql.Append(" FROM " + ModelInfo.TableName);
 						command.CreateParameter(paramNames[index], options.ParamValues[index]);
 					}
 				}
+
+				Dictionary<string, Type> quickTypeLookup = new Dictionary<string, Type>();
+				Assembly assembly = Assembly.GetExecutingAssembly();
 				
 				using (var reader = command.ExecuteReader())
 				{
 					while (reader.Read())
 					{
-						var model = new Persisto.Generated.Models.");
+");
             
-            #line 115 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
-            this.Write(this.ToStringHelper.ToStringWithCulture(ModelInfo.GeneratedModelTypeName));
+            #line 226 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
+
+if (!string.IsNullOrWhiteSpace(veryBaseModelInfo.TypeNameFieldName))
+{
+	WriteLine("\t\t\t\t\t\tstring modelTypeName = reader.GetString(0);");
+	WriteLine("\t\t\t\t\t\tType modelType;");
+	WriteLine("\t\t\t\t\t\tif (!quickTypeLookup.TryGetValue(modelTypeName, out modelType))");
+	WriteLine("\t\t\t\t\t\t{");
+	WriteLine("\t\t\t\t\t\t\tmodelType = assembly.GetType(modelTypeName);");
+	WriteLine("\t\t\t\t\t\t\tquickTypeLookup.Add(modelTypeName, modelType);");
+	WriteLine("\t\t\t\t\t\t}");
+	WriteLine("\t\t\t\t\t\tvar model = (Persisto.IGeneratedModel)Activator.CreateInstance(modelType);", ModelInfo.GeneratedModelTypeFullName);
+}
+else
+{
+	WriteLine("\t\t\t\t\t\tvar model = new {0}();", ModelInfo.GeneratedModelTypeFullName);
+}
+
             
             #line default
             #line hidden
-            this.Write("();\r\n\t\t\t\t\t\t\r\n\t\t\t\t\t\tmodel._Support.CreateConnectionFunc = createConnection;\r\n\t\t\t\t\t" +
-                    "\t\r\n");
+            this.Write("\t\t\t\t\t\t\r\n\t\t\t\t\t\tmodel._Support.CreateConnectionFunc = createConnection;\r\n");
             
-            #line 119 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
+            #line 245 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
+
+foreach (var modelInfo in familyOfModelInfos)
+{
+	WriteLine("\t\t\t\t\t\t{0}.SetFieldsFromReader(model as {1}, reader, {2});",
+		"Persisto.Generated.Persistors." + modelInfo.ModelType.Name + "Persistor",
+		modelInfo.ModelType.FullName,
+		fieldOffsets[modelInfo]);
+}
+
+            
+            #line default
+            #line hidden
+            this.Write("\t\t\t\t\t\tmodel._Support.ExistsInDatabase = true;\r\n\t\t\t\t\t\t\r\n\t\t\t\t\t\tmodels.Add((");
+            
+            #line 256 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
+            this.Write(this.ToStringHelper.ToStringWithCulture(ModelInfo.ModelType.FullName));
+            
+            #line default
+            #line hidden
+            this.Write(")model);\r\n\t\t\t\t\t}\r\n\t\t\t\t}\r\n\t\t\t}\r\n\r\n\t\t\treturn models;\r\n\t\t}\r\n\r\n\t\tinternal static void" +
+                    " SetFieldsFromReader(");
+            
+            #line 264 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
+            this.Write(this.ToStringHelper.ToStringWithCulture(ModelInfo.ModelType.FullName));
+            
+            #line default
+            #line hidden
+            this.Write(" model, DbDataReader reader, int fieldOffset)\r\n\t\t{\r\n\t\t\tif (model == null)\r\n\t\t\t{\r\n" +
+                    "\t\t\t\treturn;\r\n\t\t\t}\r\n\r\n\t\t\tvar generatedModel = (IGeneratedModel)model;\r\n\r\n");
+            
+            #line 273 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
 
 for (var memberIndex = 0; memberIndex < ModelInfo.Members.Length; memberIndex++)
 {
 	DbMemberInfo member = ModelInfo.Members[memberIndex];
-	string memberName = member.Name;
+	string memberName = "model." + member.Name;
 	
 	Type memberType = member.MemberType;
 	
@@ -222,15 +378,17 @@ for (var memberIndex = 0; memberIndex < ModelInfo.Members.Length; memberIndex++)
 	{
 		if (manyToOne != null)
 		{
+			WriteLine("\t\t\t// ManyToOne");
 			if ((bool)member.Relation.LoadOnDemand)
 			{
 				IDbModelInfo foreignModelInfo = DbModelInfo.Get(member.Relation.ForeignType);
 				
-				memberName = member.Name + foreignModelInfo.ID.Name;
-				
 				memberType = foreignModelInfo.ID.MemberType;
 				
-				WriteLine("{0}model.HasLoaded{1} = false;", "\t\t\t\t\t\t", member.Name);
+				WriteLine("{0}generatedModel._Support.HasMemberLoaded[\"{1}\"] = false;", "\t\t\t", member.Name);
+
+				memberName = string.Format("generatedModel._Support.ObjectIds[\"{0}\"]", member.Name + foreignModelInfo.ID.Name);
+				//continue;
 			}
 			else
 			{
@@ -238,15 +396,16 @@ for (var memberIndex = 0; memberIndex < ModelInfo.Members.Length; memberIndex++)
 					"DbModelInfo.Get<" + member.MemberType.FullName +
 					">().Persistor.LoadModel(db, new LoadOptions() { Where = \"" +
 					foreignTypeModelInfo.ID.FieldName + " = @" + foreignTypeModelInfo.ID.FieldName +
-					"\", ParamValues = new object[] { reader.GetValue(" + memberIndex.ToString() + ") } })";
+					"\", ParamValues = new object[] { reader.GetValue(fieldOffset + " + memberIndex.ToString() + ") } })";
 				
-				WriteLine("{0}model.{1} = {2};", "\t\t\t\t\t\t", memberName, method);
+				WriteLine("{0}{1} = {2};", "\t\t\t", memberName, method);
 				
 				continue;
 			}
 		}
 		else if (oneToMany != null)
 		{
+			WriteLine("\t\t\t// OneToMany");
 			if (!member.Relation.LoadOnDemand)
 			{
 
@@ -255,42 +414,42 @@ for (var memberIndex = 0; memberIndex < ModelInfo.Members.Length; memberIndex++)
             #line hidden
             this.Write("\t\t\t\t\t\tmodel.");
             
-            #line 167 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
+            #line 324 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(member.Name));
             
             #line default
             #line hidden
             this.Write(" = db.LoadModels<");
             
-            #line 167 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
+            #line 324 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(member.Relation.ForeignType.FullName));
             
             #line default
             #line hidden
             this.Write(">(\r\n\t\t\t\t\t\t\tnew LoadOptions()\r\n\t\t\t\t\t\t\t{\r\n\t\t\t\t\t\t\t\tWhere = \"");
             
-            #line 170 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
+            #line 327 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(member.FieldName));
             
             #line default
             #line hidden
             this.Write(" = @");
             
-            #line 170 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
+            #line 327 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(member.FieldName));
             
             #line default
             #line hidden
             this.Write("\",\r\n\t\t\t\t\t\t\t\tParamValues = new object[] { model.");
             
-            #line 171 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
+            #line 328 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(ModelInfo.ID.Name));
             
             #line default
             #line hidden
             this.Write(" } \r\n\t\t\t\t\t\t\t}).ToList();\r\n");
             
-            #line 173 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
+            #line 330 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
 
 			}
 			continue;
@@ -298,6 +457,7 @@ for (var memberIndex = 0; memberIndex < ModelInfo.Members.Length; memberIndex++)
 		else
 		{
 			// TODO: Support ManyToMany
+			WriteLine("\t\t\t// ManyToMany");
 			continue;
 		}
 	}
@@ -311,62 +471,62 @@ for (var memberIndex = 0; memberIndex < ModelInfo.Members.Length; memberIndex++)
 	{
 		if (member.DataType == DbType.Guid)
 		{
-			method = string.Format("reader.IsDBNull({0}) ? default(Guid) : new Guid(reader.GetValue({0}))", memberIndex);
+			method = string.Format("reader.IsDBNull(fieldOffset + {0}) ? default(Guid) : new Guid(reader.GetValue(fieldOffset + {0}))", memberIndex);
 		}
 		else
 		{
-			method = string.Format("reader.IsDBNull({0}) ? default(Guid) : new Guid(reader.GetString({0}))", memberIndex);
+			method = string.Format("reader.IsDBNull(fieldOffset + {0}) ? default(Guid) : new Guid(reader.GetString(fieldOffset + {0}))", memberIndex);
 		}
 	}
 	else if (memberType == typeof(int))
 	{
-		method = string.Format("reader.GetInt32({0})", memberIndex);
+		method = string.Format("reader.GetInt32(fieldOffset + {0})", memberIndex);
 	}
 	else if (memberType == typeof(Int16))
 	{
-		method = string.Format("reader.GetInt16({0})", memberIndex);
+		method = string.Format("reader.GetInt16(fieldOffset + {0})", memberIndex);
 	}
 	else if (memberType == typeof(Int64))
 	{
-		method = string.Format("reader.GetInt64({0})", memberIndex);
+		method = string.Format("reader.GetInt64(fieldOffset + {0})", memberIndex);
 	}
 	else if (memberType == typeof(DateTime))
 	{
-		method = string.Format("reader.GetDateTime({0})", memberIndex);
+		method = string.Format("reader.GetDateTime(fieldOffset + {0})", memberIndex);
 	}
 	else if (memberType == typeof(string))
 	{
-		method = string.Format("reader.GetString({0})", memberIndex);
+		method = string.Format("reader.GetString(fieldOffset + {0})", memberIndex);
 	}
 	else if (memberType == typeof(double))
 	{
-		method = string.Format("reader.GetDouble({0})", memberIndex);
+		method = string.Format("reader.GetDouble(fieldOffset + {0})", memberIndex);
 	}
 	else if (memberType.IsEnum)
 	{
 		if ((member.DataType == DbType.String) || (member.DataType == DbType.AnsiString))
 		{
-			method = string.Format("({0})Enum.Parse(typeof({0}), reader.GetString({1}))",
+			method = string.Format("({0})Enum.Parse(typeof({0}), reader.GetString(fieldOffset + {1}))",
 				member.MemberType.FullName, memberIndex);
 		}
 		else if (member.DataType == DbType.Int16)
 		{
-			method = string.Format("({0})reader.GetInt16({1})",
+			method = string.Format("({0})reader.GetInt16(fieldOffset + {1})",
 				member.MemberType.FullName, memberIndex);
 		}
 		else if (member.DataType == DbType.Int32)
 		{
-			method = string.Format("({0})reader.GetInt32({1})",
+			method = string.Format("({0})reader.GetInt32(fieldOffset + {1})",
 				member.MemberType.FullName, memberIndex);
 		}
 		else if (member.DataType == DbType.Int64)
 		{
-			method = string.Format("({0})reader.GetInt64({1})",
+			method = string.Format("({0})reader.GetInt64(fieldOffset + {1})",
 				member.MemberType.FullName, memberIndex);
 		}
 		else if (member.DataType == DbType.Byte)
 		{
-			method = string.Format("({0})reader.GetByte({1})",
+			method = string.Format("({0})reader.GetByte(fieldOffset + {1})",
 				member.MemberType.FullName, memberIndex);
 		}
 		else
@@ -378,28 +538,28 @@ for (var memberIndex = 0; memberIndex < ModelInfo.Members.Length; memberIndex++)
 	{
 		if (member.DataType == DbType.Boolean)
 		{
-			method = string.Format("reader.GetBoolean({0})", memberIndex);
+			method = string.Format("reader.GetBoolean(fieldOffset + {0})", memberIndex);
 		}
 		else if (member.DataType == DbType.Int16)
 		{
-			method = string.Format("reader.GetInt16({0}) > 0", memberIndex);
+			method = string.Format("reader.GetInt16(fieldOffset + {0}) > 0", memberIndex);
 		}
 		else if (member.DataType == DbType.Int32)
 		{
-			method = string.Format("reader.GetInt32({0}) > 0", memberIndex);
+			method = string.Format("reader.GetInt32(fieldOffset + {0}) > 0", memberIndex);
 		}
 		else if (member.DataType == DbType.Int64)
 		{
-			method = string.Format("reader.GetInt64({0}) > 0", memberIndex);
+			method = string.Format("reader.GetInt64(fieldOffset + {0}) > 0", memberIndex);
 		}
 		else if (member.DataType == DbType.Byte)
 		{
-			method = string.Format("reader.GetByte({0}) > 0", memberIndex);
+			method = string.Format("reader.GetByte(fieldOffset + {0}) > 0", memberIndex);
 		}
 		else if ((member.DataType == DbType.String) || (member.DataType == DbType.AnsiString))
 		{
 			method = string.Format(
-				"!reader.GetString({0}).Equals(\"N\", StringComparison.CurrentCultureIgnoreCase)", memberIndex);
+				"!reader.GetString(fieldOffset + {0}).Equals(\"N\", StringComparison.CurrentCultureIgnoreCase)", memberIndex);
 		}
 		else
 		{
@@ -411,19 +571,18 @@ for (var memberIndex = 0; memberIndex < ModelInfo.Members.Length; memberIndex++)
 		continue;
 	}
 	
-	WriteLine("{0}model.{1} = {2};", "\t\t\t\t\t\t", memberName, method);
+	WriteLine("{0}{1} = {2};", "\t\t\t", memberName, method);
 }
 
             
             #line default
             #line hidden
-            this.Write("\r\n\t\t\t\t\t\tmodel._Support.ExistsInDatabase = true;\r\n\t\t\t\t\t\t\r\n\t\t\t\t\t\tmodels.Add(model);" +
-                    "\r\n\t\t\t\t\t}\r\n\t\t\t\t}\r\n\t\t\t}\r\n\r\n\t\t\treturn models;\r\n\t\t}\r\n\r\n");
+            this.Write("\t\t}\r\n\r\n");
             
-            #line 307 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
+            #line 456 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
 
 
-Action<bool, bool> setFields =
+Action<bool, bool> setParameters =
 	delegate(bool includeId, bool useIncrementorValues)
 	{
 		for (var memberIndex = 0; memberIndex < membersWithFields.Length; memberIndex++)
@@ -452,16 +611,16 @@ Action<bool, bool> setFields =
 						string generatedModelTypeName = "Persisto.Generated.Models." + ModelInfo.ModelType.Name;						
 						
 						string foreignModelIdName = foreignModelInfo.ID.Name;
-						if (foreignModelInfo.ID.MemberType == typeof(Guid))
-						{
-							foreignModelIdName += ".ToString(true)";
-						}
+						string cast = foreignModelInfo.ID.MemberType == typeof(Guid) ? "(Guid)" : "";
+						string toString = foreignModelInfo.ID.MemberType == typeof(Guid) ?  ".ToString(true)" : "";
 						
 						expression = string.Format(
-							"model is {0} ? (({0})model).{1}{2} : (model.{1} == null ? null : (object)model.{1}.{2})",
+							"model is IGeneratedModel ? ({4}(((IGeneratedModel)model)._Support.ObjectIds[\"{1}{2}\"])){3} : (model.{1} == null ? null : (object)model.{1}.{2}{3})",
 							generatedModelTypeName,
 							member.Name,
-							foreignModelIdName);
+							foreignModelIdName,
+							toString,
+							cast);
 					}
 					else
 					{
@@ -540,7 +699,7 @@ Action<bool, bool> setFields =
             #line hidden
             this.Write("\t\t\r\n\t\tnew public ");
             
-            #line 422 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
+            #line 571 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(ModelInfo.ModelType.FullName));
             
             #line default
@@ -555,12 +714,300 @@ Action<bool, bool> setFields =
 
 			return model;
 		}
+
+		/*
+		var param = cmd.CreateParameter();
+					param.ParameterName = """";
+					param.DbType = DbExtensions.DbTypeFromType(typeof(string));
+					param.Direction = System.Data.ParameterDirection.Input;
+					cmd.Parameters.Add(param);
+		*/
 		
-		public void InsertModel(
-			System.Data.Common.DbConnection db,
-			");
+");
             
-            #line 435 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
+            #line 590 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
+
+Action<IDbModelInfo> addManyToManyUpdateMethods = (IDbModelInfo modelInfo) =>
+{
+	foreach (var member in modelInfo.Members
+		.Where(m => m.Relation is DbRelation.ManyToManyAttribute))
+	{
+		var relation = (DbRelation.ManyToManyAttribute)member.Relation;
+		var foreignModelInfo = DbModelInfo.Get(relation.ForeignType);
+
+		var localIDSuffix = modelInfo.ID.MemberType == typeof(Guid) ? ".ToString(true)" : "";
+		var foreignIDSuffix = foreignModelInfo.ID.MemberType == typeof(Guid) ? ".ToString(true)" : "";
+
+            
+            #line default
+            #line hidden
+            this.Write("\t\tpublic void Update_");
+            
+            #line 602 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
+            this.Write(this.ToStringHelper.ToStringWithCulture(member.Name));
+            
+            #line default
+            #line hidden
+            this.Write("(System.Data.Common.DbConnection db, ");
+            
+            #line 602 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
+            this.Write(this.ToStringHelper.ToStringWithCulture(modelInfo.ModelType.FullName));
+            
+            #line default
+            #line hidden
+            this.Write(" model)\r\n\t\t{\r\n\t\t\tvar generatedModel = model as IGeneratedModel;\r\n\t\t\t\r\n\t\t\tif (gene" +
+                    "ratedModel != null)\r\n\t\t\t{\r\n\t\t\t\tif (!generatedModel._Support.HasMemberLoaded[\"");
+            
+            #line 608 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
+            this.Write(this.ToStringHelper.ToStringWithCulture(member.Name));
+            
+            #line default
+            #line hidden
+            this.Write("\"])\r\n\t\t\t\t{\r\n\t\t\t\t\t// ");
+            
+            #line 610 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
+            this.Write(this.ToStringHelper.ToStringWithCulture(member.Name));
+            
+            #line default
+            #line hidden
+            this.Write(" couldn\'t have changed as it hasn\'t been flagged as loaded\r\n\t\t\t\t\treturn;\r\n\t\t\t\t}\r\n" +
+                    "\t\t\t}\r\n\t\t\telse\r\n\t\t\t{\r\n\t\t\t\tif (model.");
+            
+            #line 616 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
+            this.Write(this.ToStringHelper.ToStringWithCulture(member.Name));
+            
+            #line default
+            #line hidden
+            this.Write(" == null)\r\n\t\t\t\t{\r\n\t\t\t\t\t// If member is null then just assume we don\'t need to upd" +
+                    "ate it\r\n\t\t\t\t\treturn;\r\n\t\t\t\t}\r\n\t\t\t}\r\n\t\t\t\r\n\t\t\t// Get a list of existing ");
+            
+            #line 623 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
+            this.Write(this.ToStringHelper.ToStringWithCulture(foreignModelInfo.ModelType.Name));
+            
+            #line default
+            #line hidden
+            this.Write(" ");
+            
+            #line 623 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
+            this.Write(this.ToStringHelper.ToStringWithCulture(foreignModelInfo.ID.Name));
+            
+            #line default
+            #line hidden
+            this.Write("s for this ");
+            
+            #line 623 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
+            this.Write(this.ToStringHelper.ToStringWithCulture(modelInfo.ModelType.Name));
+            
+            #line default
+            #line hidden
+            this.Write("\r\n\t\t\tvar existingList = new List<string>();\r\n\t\t\tusing (var existing = db.CreateCo" +
+                    "mmand())\r\n\t\t\t{\r\n\t\t\t\texisting.CommandText = \"SELECT ");
+            
+            #line 627 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
+            this.Write(this.ToStringHelper.ToStringWithCulture(relation.ForeignKey2));
+            
+            #line default
+            #line hidden
+            this.Write(" FROM ");
+            
+            #line 627 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
+            this.Write(this.ToStringHelper.ToStringWithCulture(relation.TableName));
+            
+            #line default
+            #line hidden
+            this.Write(" WHERE ");
+            
+            #line 627 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
+            this.Write(this.ToStringHelper.ToStringWithCulture(relation.ForeignKey1));
+            
+            #line default
+            #line hidden
+            this.Write(" = @");
+            
+            #line 627 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
+            this.Write(this.ToStringHelper.ToStringWithCulture(relation.ForeignKey1));
+            
+            #line default
+            #line hidden
+            this.Write("\";\r\n\t\t\t\texisting.CreateParameter(\"");
+            
+            #line 628 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
+            this.Write(this.ToStringHelper.ToStringWithCulture(relation.ForeignKey1));
+            
+            #line default
+            #line hidden
+            this.Write("\", DbType.String, model.");
+            
+            #line 628 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
+            this.Write(this.ToStringHelper.ToStringWithCulture(modelInfo.ID.Name + localIDSuffix));
+            
+            #line default
+            #line hidden
+            this.Write(@");
+				
+				using (var reader = existing.ExecuteReader())
+				{
+					while (reader.Read())
+					{
+						existingList.Add(reader.GetString(0));
+					}
+				}
+			}
+
+			using (var insert = db.CreateCommand())
+			{
+				insert.CommandText = ""INSERT INTO ");
+            
+            #line 641 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
+            this.Write(this.ToStringHelper.ToStringWithCulture(relation.TableName));
+            
+            #line default
+            #line hidden
+            this.Write(" (");
+            
+            #line 641 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
+            this.Write(this.ToStringHelper.ToStringWithCulture(relation.ForeignKey1));
+            
+            #line default
+            #line hidden
+            this.Write(", ");
+            
+            #line 641 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
+            this.Write(this.ToStringHelper.ToStringWithCulture(relation.ForeignKey2));
+            
+            #line default
+            #line hidden
+            this.Write(") VALUES (@");
+            
+            #line 641 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
+            this.Write(this.ToStringHelper.ToStringWithCulture(relation.ForeignKey1));
+            
+            #line default
+            #line hidden
+            this.Write(", @");
+            
+            #line 641 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
+            this.Write(this.ToStringHelper.ToStringWithCulture(relation.ForeignKey2));
+            
+            #line default
+            #line hidden
+            this.Write(")\";\r\n\t\t\t\tinsert.CreateParameter(\"");
+            
+            #line 642 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
+            this.Write(this.ToStringHelper.ToStringWithCulture(relation.ForeignKey1));
+            
+            #line default
+            #line hidden
+            this.Write("\", DbType.String, null);\r\n\t\t\t\tinsert.CreateParameter(\"");
+            
+            #line 643 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
+            this.Write(this.ToStringHelper.ToStringWithCulture(relation.ForeignKey2));
+            
+            #line default
+            #line hidden
+            this.Write("\", DbType.String, null);\r\n\t\t\t\t\t\r\n\t\t\t\tforeach (var item in model.Formats)\r\n\t\t\t\t{\r\n" +
+                    "\t\t\t\t\tvar index = existingList.IndexOf(item.Id.ToString());\r\n\t\t\t\t\t\t\r\n\t\t\t\t\tif (ind" +
+                    "ex == -1)\r\n\t\t\t\t\t{\r\n\t\t\t\t\t\tinsert.Parameters[0].Value = model.");
+            
+            #line 651 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
+            this.Write(this.ToStringHelper.ToStringWithCulture(modelInfo.ID.Name + localIDSuffix));
+            
+            #line default
+            #line hidden
+            this.Write(";\r\n\t\t\t\t\t\tinsert.Parameters[1].Value = item.");
+            
+            #line 652 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
+            this.Write(this.ToStringHelper.ToStringWithCulture(foreignModelInfo.ID.Name + foreignIDSuffix));
+            
+            #line default
+            #line hidden
+            this.Write(@";
+						insert.ExecuteNonQuery();
+					}
+					else
+					{
+						existingList.RemoveAt(index);
+					}
+				}
+			}
+				
+			if (existingList.Count > 0)
+			{
+				using (var delete = db.CreateCommand())
+				{
+					delete.CommandText = ""DELETE FROM ");
+            
+            #line 666 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
+            this.Write(this.ToStringHelper.ToStringWithCulture(relation.TableName));
+            
+            #line default
+            #line hidden
+            this.Write(" WHERE ");
+            
+            #line 666 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
+            this.Write(this.ToStringHelper.ToStringWithCulture(relation.ForeignKey1));
+            
+            #line default
+            #line hidden
+            this.Write(" = @");
+            
+            #line 666 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
+            this.Write(this.ToStringHelper.ToStringWithCulture(relation.ForeignKey1));
+            
+            #line default
+            #line hidden
+            this.Write(" AND ");
+            
+            #line 666 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
+            this.Write(this.ToStringHelper.ToStringWithCulture(relation.ForeignKey2));
+            
+            #line default
+            #line hidden
+            this.Write(" = @");
+            
+            #line 666 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
+            this.Write(this.ToStringHelper.ToStringWithCulture(relation.ForeignKey2));
+            
+            #line default
+            #line hidden
+            this.Write("\";\r\n\t\t\t\t\tdelete.CreateParameter(\"");
+            
+            #line 667 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
+            this.Write(this.ToStringHelper.ToStringWithCulture(relation.ForeignKey1));
+            
+            #line default
+            #line hidden
+            this.Write("\", DbType.String, null);\r\n\t\t\t\t\tdelete.CreateParameter(\"");
+            
+            #line 668 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
+            this.Write(this.ToStringHelper.ToStringWithCulture(relation.ForeignKey2));
+            
+            #line default
+            #line hidden
+            this.Write("\", DbType.String, null);\r\n\t\t\t\t\t\t\r\n\t\t\t\t\tforeach (var id in existingList)\r\n\t\t\t\t\t{\r\n" +
+                    "\t\t\t\t\t\tdelete.Parameters[0].Value = model.");
+            
+            #line 672 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
+            this.Write(this.ToStringHelper.ToStringWithCulture(modelInfo.ID.Name + localIDSuffix));
+            
+            #line default
+            #line hidden
+            this.Write(";\r\n\t\t\t\t\t\tdelete.Parameters[1].Value = id;\r\n\t\t\t\t\t\tdelete.ExecuteNonQuery();\r\n\t\t\t\t\t" +
+                    "}\r\n\t\t\t\t}\r\n\t\t\t}\r\n\t\t}\r\n");
+            
+            #line 679 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
+
+	}
+};
+
+addManyToManyUpdateMethods(ModelInfo);
+
+            
+            #line default
+            #line hidden
+            this.Write("\r\n\t\tpublic void InsertModel(\r\n\t\t\tSystem.Data.Common.DbConnection db,\r\n\t\t\t");
+            
+            #line 688 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(ModelInfo.ModelType.FullName));
             
             #line default
@@ -569,13 +1016,20 @@ Action<bool, bool> setFields =
                     "delInfo.Persistor.InsertModel(db, model);\r\n\t\t\t}\r\n\t\t\t\r\n\t\t\tusing (var command = db" +
                     ".CreateCommand())\r\n\t\t\t{\r\n");
             
-            #line 444 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
+            #line 697 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
 
 
 StringBuilder insertSql = new StringBuilder("INSERT INTO " + ModelInfo.TableName);
 
-insertSql.Append(" (" + string.Join(", ", membersWithFields.Select(m => m.FieldName).ToArray()) + ")");
-insertSql.Append(" VALUES (@" + string.Join(", @", membersWithFields.Select(m => m.FieldName).ToArray()) + ")");
+List<string> fieldNamesToInsert = new List<string>();
+fieldNamesToInsert.AddRange(membersWithFields.Select(m => m.FieldName));
+if (!string.IsNullOrWhiteSpace(ModelInfo.TypeNameFieldName))
+{
+	fieldNamesToInsert.Add(ModelInfo.TypeNameFieldName);
+}
+
+insertSql.Append(" (" + string.Join(", ", fieldNamesToInsert.ToArray()) + ")");
+insertSql.Append(" VALUES (@" + string.Join(", @", fieldNamesToInsert.ToArray()) + ")");
 
 
             
@@ -583,14 +1037,14 @@ insertSql.Append(" VALUES (@" + string.Join(", @", membersWithFields.Select(m =>
             #line hidden
             this.Write("\t\t\t\tcommand.CommandText = \"");
             
-            #line 452 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
+            #line 712 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(insertSql.ToString()));
             
             #line default
             #line hidden
             this.Write("\";\r\n\r\n");
             
-            #line 454 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
+            #line 714 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
 
 foreach (IDbMemberInfo member in ModelInfo.Members.Where(m => m.Incrementor != null))
 {
@@ -599,14 +1053,19 @@ foreach (IDbMemberInfo member in ModelInfo.Members.Where(m => m.Incrementor != n
 
 WriteLine("");
 
-setFields(true, true);
+setParameters(true, true);
+
+if (!string.IsNullOrWhiteSpace(ModelInfo.TypeNameFieldName))
+{
+	WriteLine("\t\t\t\tcommand.CreateParameter(\"@{0}\", model.GetType().FullName);", ModelInfo.TypeNameFieldName);
+}
 
             
             #line default
             #line hidden
             this.Write("\r\n\t\t\t\tcommand.ExecuteNonQuery();\r\n\r\n");
             
-            #line 467 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
+            #line 732 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
 
 foreach (IDbMemberInfo member in ModelInfo.Members.Where(m => m.Incrementor != null))
 {
@@ -618,10 +1077,23 @@ foreach (IDbMemberInfo member in ModelInfo.Members.Where(m => m.Incrementor != n
             #line hidden
             this.Write("\t\t\t\tvar generatedModel = model as Persisto.IGeneratedModel;\r\n\t\t\t\tif (generatedMod" +
                     "el != null)\r\n\t\t\t\t{\r\n\t\t\t\t\tgeneratedModel._Support.ExistsInDatabase = true;\r\n\t\t\t\t}" +
-                    "\r\n\t\t\t}\r\n\t\t}\r\n\t\t\r\n\t\tpublic void UpdateModel(\r\n\t\t\tSystem.Data.Common.DbConnection " +
-                    "db,\r\n\t\t\t");
+                    "\r\n\r\n");
             
-            #line 482 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
+            #line 743 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
+
+foreach (var member in ModelInfo.Members
+		.Where(m => m.Relation is DbRelation.ManyToManyAttribute))
+{
+	WriteLine("\t\t\t\tUpdate_{0}(db, model);", member.Name);
+}
+
+            
+            #line default
+            #line hidden
+            this.Write("\t\t\t}\r\n\t\t}\r\n\t\t\r\n\t\tpublic void UpdateModel(\r\n\t\t\tSystem.Data.Common.DbConnection db," +
+                    "\r\n\t\t\t");
+            
+            #line 755 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(ModelInfo.ModelType.FullName));
             
             #line default
@@ -630,7 +1102,7 @@ foreach (IDbMemberInfo member in ModelInfo.Members.Where(m => m.Incrementor != n
                     "delInfo.Persistor.UpdateModel(db, model);\r\n\t\t\t}\r\n\t\t\t\r\n\t\t\tusing (var command = db" +
                     ".CreateCommand())\r\n\t\t\t{\r\n");
             
-            #line 491 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
+            #line 764 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
 
 StringBuilder updateSql = new StringBuilder("UPDATE " + ModelInfo.TableName + " SET ");
 updateSql.Append(string.Join(", ", membersWithFields
@@ -643,34 +1115,37 @@ updateSql.Append(" WHERE " + string.Format("{0} = @{0}", ModelInfo.ID.FieldName)
             #line hidden
             this.Write("\t\t\t\tcommand.CommandText = @\"");
             
-            #line 498 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
+            #line 771 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(updateSql.ToString()));
             
             #line default
             #line hidden
             this.Write("\";\r\n\t\t\t\t\r\n");
             
-            #line 500 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
- setFields(false, false); 
+            #line 773 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
+ setParameters(false, false); 
             
             #line default
             #line hidden
-            this.Write(@"				
-				command.ExecuteNonQuery();
-				
-				var generatedModel = model as Persisto.IGeneratedModel;
-				if (generatedModel != null)
-				{
-					generatedModel._Support.ExistsInDatabase = true;
-				}
-			}
-		}
-		
-		public void DeleteModel(
-			System.Data.Common.DbConnection db,
-			");
+            this.Write("\t\t\t\t\r\n\t\t\t\tcommand.ExecuteNonQuery();\r\n\t\t\t\t\r\n\t\t\t\tvar generatedModel = model as Per" +
+                    "sisto.IGeneratedModel;\r\n\t\t\t\tif (generatedModel != null)\r\n\t\t\t\t{\r\n\t\t\t\t\tgeneratedMo" +
+                    "del._Support.ExistsInDatabase = true;\r\n\t\t\t\t}\r\n\r\n");
             
-            #line 514 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
+            #line 783 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
+
+foreach (var member in ModelInfo.Members
+		.Where(m => m.Relation is DbRelation.ManyToManyAttribute))
+{
+	WriteLine("\t\t\t\tUpdate_{0}(db, model);", member.Name);
+}
+
+            
+            #line default
+            #line hidden
+            this.Write("\t\t\t}\r\n\t\t}\r\n\t\t\r\n\t\tpublic void DeleteModel(\r\n\t\t\tSystem.Data.Common.DbConnection db," +
+                    "\r\n\t\t\t");
+            
+            #line 795 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(ModelInfo.ModelType.FullName));
             
             #line default
@@ -678,42 +1153,42 @@ updateSql.Append(" WHERE " + string.Format("{0} = @{0}", ModelInfo.ID.FieldName)
             this.Write(" model)\r\n\t\t{\r\n\t\t\tusing (var command = db.CreateCommand())\r\n\t\t\t{\r\n\t\t\t\tcommand.Comm" +
                     "andText = @\"DELETE FROM ");
             
-            #line 518 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
+            #line 799 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(ModelInfo.TableName));
             
             #line default
             #line hidden
             this.Write(" WHERE ");
             
-            #line 518 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
+            #line 799 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(ModelInfo.ID.FieldName));
             
             #line default
             #line hidden
             this.Write(" = @");
             
-            #line 518 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
+            #line 799 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(ModelInfo.ID.FieldName));
             
             #line default
             #line hidden
             this.Write("\";\r\n\t\t\t\t\r\n\t\t\t\tcommand.CreateParameter(\r\n\t\t\t\t\t\"@");
             
-            #line 521 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
+            #line 802 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(ModelInfo.ID.FieldName));
             
             #line default
             #line hidden
             this.Write("\",\r\n\t\t\t\t\tSystem.Data.DbType.");
             
-            #line 522 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
+            #line 803 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(ModelInfo.ID.DataType.ToString()));
             
             #line default
             #line hidden
             this.Write(",\r\n\t\t\t\t\tmodel.");
             
-            #line 523 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
+            #line 804 "C:\Users\Ben Daniel\Documents\Projects\Libraries\Persisto\Templates\PersistorTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(ModelInfo.ID.Name));
             
             #line default

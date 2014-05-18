@@ -150,7 +150,7 @@ namespace Persisto
 			bool addToCommand = true)
 		{
 			var dataType = value == null ? DbType.String : DbTypeFromType(value.GetType());
-
+			
 			return command.CreateParameter(parameterName, dataType, value, addToCommand);
 		}
 

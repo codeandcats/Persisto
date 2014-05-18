@@ -21,6 +21,10 @@ namespace Persisto
 
 		string TableName { get; }
 
+		string TypeNameFieldName { get; }
+
+		string Filter { get; }
+
 		DbMemberInfo[] Members { get; }
 
 		DbMemberInfo this[string memberName] { get; }
@@ -32,6 +36,8 @@ namespace Persisto
 		IPersistor Persistor { get; }
 
 		IDbModelInfo BaseModelInfo { get; }
+
+		List<IDbModelInfo> Descendents { get; }
 	}
 
 	public interface IDbModelInfo<Model> : IDbModelInfo
@@ -74,7 +80,11 @@ namespace Persisto
 			}
 
 			TableName = dbModelAttribute.TableName;
-			
+
+			TypeNameFieldName = dbModelAttribute.TypeNameFieldName;
+
+			Filter = dbModelAttribute.Filter;
+
 			SingleReference = dbModelAttribute.SingleReference;
 
 			if (ModelType.IsInterface)
@@ -112,6 +122,7 @@ namespace Persisto
 				if (DbModelInfo.IsModelType(modelParentType))
 				{
 					BaseModelInfo = DbModelInfo.Get(modelParentType);
+					BaseModelInfo.Descendents.Add(this);
 					break;
 				}
 				modelParentType = modelParentType.BaseType;
@@ -185,6 +196,10 @@ namespace Persisto
 
 		public string TableName { get; private set; }
 
+		public string TypeNameFieldName { get; private set; }
+
+		public string Filter { get; private set; }
+
 		public bool SingleReference { get; private set; }
 
 		public DbMemberInfo[] Members { get; private set; }
@@ -225,6 +240,15 @@ namespace Persisto
 		}
 
 		public IDbModelInfo BaseModelInfo { get; private set; }
+
+		private List<IDbModelInfo> descendents = new List<IDbModelInfo>();
+		public List<IDbModelInfo> Descendents
+		{
+			get
+			{
+				return this.descendents;
+			}
+		}
 
 		#region Initialisation
 

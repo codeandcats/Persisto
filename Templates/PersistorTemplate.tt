@@ -15,6 +15,7 @@ using System.Text;
 using System.Diagnostics;
 using System.Data;
 using System.Data.Common;
+using System.Reflection;
 using Persisto;
 using <#= ModelInfo.ModelType.Namespace #>;
 
@@ -65,13 +66,120 @@ foreach (IDbMemberInfo member in ModelInfo.Members)
 			{
 <#
 // Build sql for loading models
-var loadSql = new StringBuilder("SELECT " + ModelInfo.TableName + ".");
 
-loadSql.Append(string.Join(", " + ModelInfo.TableName + ".", membersWithFields.Select(m => m.FieldName).ToArray()));
+var baseModelInfos = new Stack<IDbModelInfo>();
 
-loadSql.Append(" FROM " + ModelInfo.TableName);
+var info = ModelInfo;
+IDbModelInfo veryBaseModelInfo = null;
+
+while (info != null)
+{
+	baseModelInfos.Push(info);
+	veryBaseModelInfo = info;
+	info = info.BaseModelInfo;
+}
+
+var selectSql = new StringBuilder();
+selectSql.Append("SELECT ");
+
+var fromSql = new StringBuilder();
+
+var addedFirstTable = false;
+IDbModelInfo firstTable;
+
+var fieldOffsets = new Dictionary<IDbModelInfo, int>();
+var fieldOffset = 0;
+
+var familyOfModelInfos = new List<IDbModelInfo>();
+
+var addedFirstField = false;
+
+if (!string.IsNullOrWhiteSpace(veryBaseModelInfo.TypeNameFieldName))
+{
+	selectSql.Append(veryBaseModelInfo.TableName + "." + veryBaseModelInfo.TypeNameFieldName);
+	addedFirstField = true;
+	fieldOffset++;
+}
+
+while (baseModelInfos.Count > 0)
+{
+	info = baseModelInfos.Pop();
+
+	familyOfModelInfos.Add(info);
+
+	fieldOffsets.Add(info, fieldOffset);
+
+	foreach (var memberInfo in info.Members.Where(m => m.IsBackedByField))
+	{
+		if (addedFirstField)
+		{
+			selectSql.Append(", ");
+		}
+		else
+		{
+			addedFirstField = true;
+		}
+		selectSql.Append(info.TableName + "." + memberInfo.FieldName);
+		fieldOffset++;
+	}
+
+	if (addedFirstTable)
+	{
+		fromSql.Append(string.Format(
+			" JOIN {0} ON ({0}.{1} = {2}.{3}){4}",
+			info.TableName,
+			info.ID.FieldName,
+			info.BaseModelInfo.TableName,
+			info.BaseModelInfo.ID.FieldName,
+			string.IsNullOrWhiteSpace(info.Filter) ? "" : " AND (" + info.Filter + ")"));
+	}
+	else
+	{
+		firstTable = info;
+		addedFirstTable = true;
+		fromSql.Append(" FROM " + info.TableName);
+	}
+}
+
+Action<IDbModelInfo> addDescendents = null;
+
+addDescendents = (IDbModelInfo modelInfo) =>
+{
+	foreach (var subTypeInfo in modelInfo.Descendents)
+	{
+		familyOfModelInfos.Add(subTypeInfo);
+
+		fieldOffsets.Add(subTypeInfo, fieldOffset);
+
+		foreach (var memberInfo in subTypeInfo.Members.Where(m => m.IsBackedByField))
+		{
+			if (addedFirstField)
+			{
+				selectSql.Append(", ");
+			}
+			else
+			{
+				addedFirstField = true;
+			}
+			selectSql.Append(subTypeInfo.TableName + "." + memberInfo.FieldName);
+			fieldOffset++;
+		}
+
+		fromSql.Append(string.Format(
+			" LEFT OUTER JOIN {0} ON ({0}.{1} = {2}.{3}){4}",
+			subTypeInfo.TableName,
+			subTypeInfo.ID.FieldName,
+			modelInfo.TableName,
+			modelInfo.ID.FieldName,
+			string.IsNullOrWhiteSpace(subTypeInfo.Filter) ? "" : " AND (" + subTypeInfo.Filter + ")"));
+
+		addDescendents(subTypeInfo);
+	}
+};
+
+addDescendents(ModelInfo);
 #>
-				var loadSql = new StringBuilder(@"<#= loadSql.ToString() #>");
+				var loadSql = new StringBuilder(@"<#= (selectSql.ToString() + " " + fromSql.ToString()).Replace("\n", " ").Replace("\r", " ") #>");
 
 				if (!string.IsNullOrWhiteSpace(options.Joins))
 				{
@@ -107,20 +215,66 @@ loadSql.Append(" FROM " + ModelInfo.TableName);
 						command.CreateParameter(paramNames[index], options.ParamValues[index]);
 					}
 				}
+
+				Dictionary<string, Type> quickTypeLookup = new Dictionary<string, Type>();
+				Assembly assembly = Assembly.GetExecutingAssembly();
 				
 				using (var reader = command.ExecuteReader())
 				{
 					while (reader.Read())
 					{
-						var model = new Persisto.Generated.Models.<#= ModelInfo.GeneratedModelTypeName #>();
+<#
+if (!string.IsNullOrWhiteSpace(veryBaseModelInfo.TypeNameFieldName))
+{
+	WriteLine("\t\t\t\t\t\tstring modelTypeName = reader.GetString(0);");
+	WriteLine("\t\t\t\t\t\tType modelType;");
+	WriteLine("\t\t\t\t\t\tif (!quickTypeLookup.TryGetValue(modelTypeName, out modelType))");
+	WriteLine("\t\t\t\t\t\t{");
+	WriteLine("\t\t\t\t\t\t\tmodelType = assembly.GetType(modelTypeName);");
+	WriteLine("\t\t\t\t\t\t\tquickTypeLookup.Add(modelTypeName, modelType);");
+	WriteLine("\t\t\t\t\t\t}");
+	WriteLine("\t\t\t\t\t\tvar model = (Persisto.IGeneratedModel)Activator.CreateInstance(modelType);", ModelInfo.GeneratedModelTypeFullName);
+}
+else
+{
+	WriteLine("\t\t\t\t\t\tvar model = new {0}();", ModelInfo.GeneratedModelTypeFullName);
+}
+#>
 						
 						model._Support.CreateConnectionFunc = createConnection;
+<#
+foreach (var modelInfo in familyOfModelInfos)
+{
+	WriteLine("\t\t\t\t\t\t{0}.SetFieldsFromReader(model as {1}, reader, {2});",
+		"Persisto.Generated.Persistors." + modelInfo.ModelType.Name + "Persistor",
+		modelInfo.ModelType.FullName,
+		fieldOffsets[modelInfo]);
+}
+#>
+						model._Support.ExistsInDatabase = true;
 						
+						models.Add((<#=ModelInfo.ModelType.FullName#>)model);
+					}
+				}
+			}
+
+			return models;
+		}
+
+		internal static void SetFieldsFromReader(<#= ModelInfo.ModelType.FullName #> model, DbDataReader reader, int fieldOffset)
+		{
+			if (model == null)
+			{
+				return;
+			}
+
+			var generatedModel = (IGeneratedModel)model;
+
 <#
 for (var memberIndex = 0; memberIndex < ModelInfo.Members.Length; memberIndex++)
 {
 	DbMemberInfo member = ModelInfo.Members[memberIndex];
-	string memberName = member.Name;
+	string memberName = "model." + member.Name;
 	
 	Type memberType = member.MemberType;
 	
@@ -136,15 +290,17 @@ for (var memberIndex = 0; memberIndex < ModelInfo.Members.Length; memberIndex++)
 	{
 		if (manyToOne != null)
 		{
+			WriteLine("\t\t\t// ManyToOne");
 			if ((bool)member.Relation.LoadOnDemand)
 			{
 				IDbModelInfo foreignModelInfo = DbModelInfo.Get(member.Relation.ForeignType);
 				
-				memberName = member.Name + foreignModelInfo.ID.Name;
-				
 				memberType = foreignModelInfo.ID.MemberType;
 				
-				WriteLine("{0}model.HasLoaded{1} = false;", "\t\t\t\t\t\t", member.Name);
+				WriteLine("{0}generatedModel._Support.HasMemberLoaded[\"{1}\"] = false;", "\t\t\t", member.Name);
+
+				memberName = string.Format("generatedModel._Support.ObjectIds[\"{0}\"]", member.Name + foreignModelInfo.ID.Name);
+				//continue;
 			}
 			else
 			{
@@ -152,15 +308,16 @@ for (var memberIndex = 0; memberIndex < ModelInfo.Members.Length; memberIndex++)
 					"DbModelInfo.Get<" + member.MemberType.FullName +
 					">().Persistor.LoadModel(db, new LoadOptions() { Where = \"" +
 					foreignTypeModelInfo.ID.FieldName + " = @" + foreignTypeModelInfo.ID.FieldName +
-					"\", ParamValues = new object[] { reader.GetValue(" + memberIndex.ToString() + ") } })";
+					"\", ParamValues = new object[] { reader.GetValue(fieldOffset + " + memberIndex.ToString() + ") } })";
 				
-				WriteLine("{0}model.{1} = {2};", "\t\t\t\t\t\t", memberName, method);
+				WriteLine("{0}{1} = {2};", "\t\t\t", memberName, method);
 				
 				continue;
 			}
 		}
 		else if (oneToMany != null)
 		{
+			WriteLine("\t\t\t// OneToMany");
 			if (!member.Relation.LoadOnDemand)
 			{
 #>
@@ -177,6 +334,7 @@ for (var memberIndex = 0; memberIndex < ModelInfo.Members.Length; memberIndex++)
 		else
 		{
 			// TODO: Support ManyToMany
+			WriteLine("\t\t\t// ManyToMany");
 			continue;
 		}
 	}
@@ -190,62 +348,62 @@ for (var memberIndex = 0; memberIndex < ModelInfo.Members.Length; memberIndex++)
 	{
 		if (member.DataType == DbType.Guid)
 		{
-			method = string.Format("reader.IsDBNull({0}) ? default(Guid) : new Guid(reader.GetValue({0}))", memberIndex);
+			method = string.Format("reader.IsDBNull(fieldOffset + {0}) ? default(Guid) : new Guid(reader.GetValue(fieldOffset + {0}))", memberIndex);
 		}
 		else
 		{
-			method = string.Format("reader.IsDBNull({0}) ? default(Guid) : new Guid(reader.GetString({0}))", memberIndex);
+			method = string.Format("reader.IsDBNull(fieldOffset + {0}) ? default(Guid) : new Guid(reader.GetString(fieldOffset + {0}))", memberIndex);
 		}
 	}
 	else if (memberType == typeof(int))
 	{
-		method = string.Format("reader.GetInt32({0})", memberIndex);
+		method = string.Format("reader.GetInt32(fieldOffset + {0})", memberIndex);
 	}
 	else if (memberType == typeof(Int16))
 	{
-		method = string.Format("reader.GetInt16({0})", memberIndex);
+		method = string.Format("reader.GetInt16(fieldOffset + {0})", memberIndex);
 	}
 	else if (memberType == typeof(Int64))
 	{
-		method = string.Format("reader.GetInt64({0})", memberIndex);
+		method = string.Format("reader.GetInt64(fieldOffset + {0})", memberIndex);
 	}
 	else if (memberType == typeof(DateTime))
 	{
-		method = string.Format("reader.GetDateTime({0})", memberIndex);
+		method = string.Format("reader.GetDateTime(fieldOffset + {0})", memberIndex);
 	}
 	else if (memberType == typeof(string))
 	{
-		method = string.Format("reader.GetString({0})", memberIndex);
+		method = string.Format("reader.GetString(fieldOffset + {0})", memberIndex);
 	}
 	else if (memberType == typeof(double))
 	{
-		method = string.Format("reader.GetDouble({0})", memberIndex);
+		method = string.Format("reader.GetDouble(fieldOffset + {0})", memberIndex);
 	}
 	else if (memberType.IsEnum)
 	{
 		if ((member.DataType == DbType.String) || (member.DataType == DbType.AnsiString))
 		{
-			method = string.Format("({0})Enum.Parse(typeof({0}), reader.GetString({1}))",
+			method = string.Format("({0})Enum.Parse(typeof({0}), reader.GetString(fieldOffset + {1}))",
 				member.MemberType.FullName, memberIndex);
 		}
 		else if (member.DataType == DbType.Int16)
 		{
-			method = string.Format("({0})reader.GetInt16({1})",
+			method = string.Format("({0})reader.GetInt16(fieldOffset + {1})",
 				member.MemberType.FullName, memberIndex);
 		}
 		else if (member.DataType == DbType.Int32)
 		{
-			method = string.Format("({0})reader.GetInt32({1})",
+			method = string.Format("({0})reader.GetInt32(fieldOffset + {1})",
 				member.MemberType.FullName, memberIndex);
 		}
 		else if (member.DataType == DbType.Int64)
 		{
-			method = string.Format("({0})reader.GetInt64({1})",
+			method = string.Format("({0})reader.GetInt64(fieldOffset + {1})",
 				member.MemberType.FullName, memberIndex);
 		}
 		else if (member.DataType == DbType.Byte)
 		{
-			method = string.Format("({0})reader.GetByte({1})",
+			method = string.Format("({0})reader.GetByte(fieldOffset + {1})",
 				member.MemberType.FullName, memberIndex);
 		}
 		else
@@ -257,28 +415,28 @@ for (var memberIndex = 0; memberIndex < ModelInfo.Members.Length; memberIndex++)
 	{
 		if (member.DataType == DbType.Boolean)
 		{
-			method = string.Format("reader.GetBoolean({0})", memberIndex);
+			method = string.Format("reader.GetBoolean(fieldOffset + {0})", memberIndex);
 		}
 		else if (member.DataType == DbType.Int16)
 		{
-			method = string.Format("reader.GetInt16({0}) > 0", memberIndex);
+			method = string.Format("reader.GetInt16(fieldOffset + {0}) > 0", memberIndex);
 		}
 		else if (member.DataType == DbType.Int32)
 		{
-			method = string.Format("reader.GetInt32({0}) > 0", memberIndex);
+			method = string.Format("reader.GetInt32(fieldOffset + {0}) > 0", memberIndex);
 		}
 		else if (member.DataType == DbType.Int64)
 		{
-			method = string.Format("reader.GetInt64({0}) > 0", memberIndex);
+			method = string.Format("reader.GetInt64(fieldOffset + {0}) > 0", memberIndex);
 		}
 		else if (member.DataType == DbType.Byte)
 		{
-			method = string.Format("reader.GetByte({0}) > 0", memberIndex);
+			method = string.Format("reader.GetByte(fieldOffset + {0}) > 0", memberIndex);
 		}
 		else if ((member.DataType == DbType.String) || (member.DataType == DbType.AnsiString))
 		{
 			method = string.Format(
-				"!reader.GetString({0}).Equals(\"N\", StringComparison.CurrentCultureIgnoreCase)", memberIndex);
+				"!reader.GetString(fieldOffset + {0}).Equals(\"N\", StringComparison.CurrentCultureIgnoreCase)", memberIndex);
 		}
 		else
 		{
@@ -290,23 +448,14 @@ for (var memberIndex = 0; memberIndex < ModelInfo.Members.Length; memberIndex++)
 		continue;
 	}
 	
-	WriteLine("{0}model.{1} = {2};", "\t\t\t\t\t\t", memberName, method);
+	WriteLine("{0}{1} = {2};", "\t\t\t", memberName, method);
 }
 #>
-
-						model._Support.ExistsInDatabase = true;
-						
-						models.Add(model);
-					}
-				}
-			}
-
-			return models;
 		}
 
 <#
 
-Action<bool, bool> setFields =
+Action<bool, bool> setParameters =
 	delegate(bool includeId, bool useIncrementorValues)
 	{
 		for (var memberIndex = 0; memberIndex < membersWithFields.Length; memberIndex++)
@@ -335,16 +484,16 @@ Action<bool, bool> setFields =
 						string generatedModelTypeName = "Persisto.Generated.Models." + ModelInfo.ModelType.Name;						
 						
 						string foreignModelIdName = foreignModelInfo.ID.Name;
-						if (foreignModelInfo.ID.MemberType == typeof(Guid))
-						{
-							foreignModelIdName += ".ToString(true)";
-						}
+						string cast = foreignModelInfo.ID.MemberType == typeof(Guid) ? "(Guid)" : "";
+						string toString = foreignModelInfo.ID.MemberType == typeof(Guid) ?  ".ToString(true)" : "";
 						
 						expression = string.Format(
-							"model is {0} ? (({0})model).{1}{2} : (model.{1} == null ? null : (object)model.{1}.{2})",
+							"model is IGeneratedModel ? ({4}(((IGeneratedModel)model)._Support.ObjectIds[\"{1}{2}\"])){3} : (model.{1} == null ? null : (object)model.{1}.{2}{3})",
 							generatedModelTypeName,
 							member.Name,
-							foreignModelIdName);
+							foreignModelIdName,
+							toString,
+							cast);
 					}
 					else
 					{
@@ -429,7 +578,111 @@ Action<bool, bool> setFields =
 
 			return model;
 		}
+
+		/*
+		var param = cmd.CreateParameter();
+					param.ParameterName = "";
+					param.DbType = DbExtensions.DbTypeFromType(typeof(string));
+					param.Direction = System.Data.ParameterDirection.Input;
+					cmd.Parameters.Add(param);
+		*/
 		
+<#
+Action<IDbModelInfo> addManyToManyUpdateMethods = (IDbModelInfo modelInfo) =>
+{
+	foreach (var member in modelInfo.Members
+		.Where(m => m.Relation is DbRelation.ManyToManyAttribute))
+	{
+		var relation = (DbRelation.ManyToManyAttribute)member.Relation;
+		var foreignModelInfo = DbModelInfo.Get(relation.ForeignType);
+
+		var localIDSuffix = modelInfo.ID.MemberType == typeof(Guid) ? ".ToString(true)" : "";
+		var foreignIDSuffix = foreignModelInfo.ID.MemberType == typeof(Guid) ? ".ToString(true)" : "";
+#>
+		public void Update_<#= member.Name #>(System.Data.Common.DbConnection db, <#= modelInfo.ModelType.FullName #> model)
+		{
+			var generatedModel = model as IGeneratedModel;
+			
+			if (generatedModel != null)
+			{
+				if (!generatedModel._Support.HasMemberLoaded["<#= member.Name #>"])
+				{
+					// <#= member.Name #> couldn't have changed as it hasn't been flagged as loaded
+					return;
+				}
+			}
+			else
+			{
+				if (model.<#= member.Name #> == null)
+				{
+					// If member is null then just assume we don't need to update it
+					return;
+				}
+			}
+			
+			// Get a list of existing <#= foreignModelInfo.ModelType.Name #> <#= foreignModelInfo.ID.Name #>s for this <#= modelInfo.ModelType.Name #>
+			var existingList = new List<string>();
+			using (var existing = db.CreateCommand())
+			{
+				existing.CommandText = "SELECT <#= relation.ForeignKey2 #> FROM <#= relation.TableName #> WHERE <#= relation.ForeignKey1 #> = @<#= relation.ForeignKey1 #>";
+				existing.CreateParameter("<#= relation.ForeignKey1 #>", DbType.String, model.<#= modelInfo.ID.Name + localIDSuffix #>);
+				
+				using (var reader = existing.ExecuteReader())
+				{
+					while (reader.Read())
+					{
+						existingList.Add(reader.GetString(0));
+					}
+				}
+			}
+
+			using (var insert = db.CreateCommand())
+			{
+				insert.CommandText = "INSERT INTO <#= relation.TableName #> (<#= relation.ForeignKey1 #>, <#= relation.ForeignKey2 #>) VALUES (@<#= relation.ForeignKey1 #>, @<#= relation.ForeignKey2 #>)";
+				insert.CreateParameter("<#= relation.ForeignKey1 #>", DbType.String, null);
+				insert.CreateParameter("<#= relation.ForeignKey2 #>", DbType.String, null);
+					
+				foreach (var item in model.Formats)
+				{
+					var index = existingList.IndexOf(item.Id.ToString());
+						
+					if (index == -1)
+					{
+						insert.Parameters[0].Value = model.<#= modelInfo.ID.Name + localIDSuffix #>;
+						insert.Parameters[1].Value = item.<#= foreignModelInfo.ID.Name + foreignIDSuffix #>;
+						insert.ExecuteNonQuery();
+					}
+					else
+					{
+						existingList.RemoveAt(index);
+					}
+				}
+			}
+				
+			if (existingList.Count > 0)
+			{
+				using (var delete = db.CreateCommand())
+				{
+					delete.CommandText = "DELETE FROM <#= relation.TableName #> WHERE <#= relation.ForeignKey1 #> = @<#= relation.ForeignKey1 #> AND <#= relation.ForeignKey2 #> = @<#= relation.ForeignKey2 #>";
+					delete.CreateParameter("<#= relation.ForeignKey1 #>", DbType.String, null);
+					delete.CreateParameter("<#= relation.ForeignKey2 #>", DbType.String, null);
+						
+					foreach (var id in existingList)
+					{
+						delete.Parameters[0].Value = model.<#= modelInfo.ID.Name + localIDSuffix #>;
+						delete.Parameters[1].Value = id;
+						delete.ExecuteNonQuery();
+					}
+				}
+			}
+		}
+<#
+	}
+};
+
+addManyToManyUpdateMethods(ModelInfo);
+#>
+
 		public void InsertModel(
 			System.Data.Common.DbConnection db,
 			<#= ModelInfo.ModelType.FullName #> model)
@@ -445,8 +698,15 @@ Action<bool, bool> setFields =
 
 StringBuilder insertSql = new StringBuilder("INSERT INTO " + ModelInfo.TableName);
 
-insertSql.Append(" (" + string.Join(", ", membersWithFields.Select(m => m.FieldName).ToArray()) + ")");
-insertSql.Append(" VALUES (@" + string.Join(", @", membersWithFields.Select(m => m.FieldName).ToArray()) + ")");
+List<string> fieldNamesToInsert = new List<string>();
+fieldNamesToInsert.AddRange(membersWithFields.Select(m => m.FieldName));
+if (!string.IsNullOrWhiteSpace(ModelInfo.TypeNameFieldName))
+{
+	fieldNamesToInsert.Add(ModelInfo.TypeNameFieldName);
+}
+
+insertSql.Append(" (" + string.Join(", ", fieldNamesToInsert.ToArray()) + ")");
+insertSql.Append(" VALUES (@" + string.Join(", @", fieldNamesToInsert.ToArray()) + ")");
 
 #>
 				command.CommandText = "<#= insertSql.ToString() #>";
@@ -459,7 +719,12 @@ foreach (IDbMemberInfo member in ModelInfo.Members.Where(m => m.Incrementor != n
 
 WriteLine("");
 
-setFields(true, true);
+setParameters(true, true);
+
+if (!string.IsNullOrWhiteSpace(ModelInfo.TypeNameFieldName))
+{
+	WriteLine("\t\t\t\tcommand.CreateParameter(\"@{0}\", model.GetType().FullName);", ModelInfo.TypeNameFieldName);
+}
 #>
 
 				command.ExecuteNonQuery();
@@ -474,6 +739,14 @@ foreach (IDbMemberInfo member in ModelInfo.Members.Where(m => m.Incrementor != n
 				{
 					generatedModel._Support.ExistsInDatabase = true;
 				}
+
+<#
+foreach (var member in ModelInfo.Members
+		.Where(m => m.Relation is DbRelation.ManyToManyAttribute))
+{
+	WriteLine("\t\t\t\tUpdate_{0}(db, model);", member.Name);
+}
+#>
 			}
 		}
 		
@@ -497,7 +770,7 @@ updateSql.Append(" WHERE " + string.Format("{0} = @{0}", ModelInfo.ID.FieldName)
 #>
 				command.CommandText = @"<#= updateSql.ToString() #>";
 				
-<# setFields(false, false); #>
+<# setParameters(false, false); #>
 				
 				command.ExecuteNonQuery();
 				
@@ -506,6 +779,14 @@ updateSql.Append(" WHERE " + string.Format("{0} = @{0}", ModelInfo.ID.FieldName)
 				{
 					generatedModel._Support.ExistsInDatabase = true;
 				}
+
+<#
+foreach (var member in ModelInfo.Members
+		.Where(m => m.Relation is DbRelation.ManyToManyAttribute))
+{
+	WriteLine("\t\t\t\tUpdate_{0}(db, model);", member.Name);
+}
+#>
 			}
 		}
 		

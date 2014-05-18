@@ -113,7 +113,7 @@ namespace Persisto
 		#endregion
 	}
 
-    public interface IPersistor
+	public interface IPersistor
 	{
 		IDbModelInfo ModelInfo { get; }
 

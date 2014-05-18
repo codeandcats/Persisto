@@ -7,6 +7,12 @@ namespace Persisto
 {
 	public class ModelSupport
 	{
+		public ModelSupport()
+		{
+			HasMemberLoaded = new DynamicDictionary<string, bool>();
+			ObjectIds = new DynamicDictionary<string, object>();
+		}
+
 		public Func<DbConnection> CreateConnectionFunc;
 
 		public DbConnection CreateConnection()
@@ -64,6 +70,35 @@ namespace Persisto
 			}
 		}
 
+		public DynamicDictionary<string, bool> HasMemberLoaded { get; private set; }
+
+		public DynamicDictionary<string, object> ObjectIds { get; private set; }
+		
 		public bool ExistsInDatabase { get; set; }
+	}
+
+	public class DynamicDictionary<Key, Value>
+	{
+		private Dictionary<Key, Value> values = new Dictionary<Key,Value>();
+
+		public Value this[Key key]
+		{
+			get
+			{
+				Value value;
+				if (values.TryGetValue(key, out value))
+				{
+					return value;
+				}
+				else
+				{
+					return default(Value);
+				}
+			}
+			set
+			{
+				values[key] = value;
+			}
+		}
 	}
 }

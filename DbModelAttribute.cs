@@ -14,5 +14,9 @@ namespace Persisto
 		public string TableName { get; set; }
 
 		public bool SingleReference { get; set; }
+
+		public string TypeNameFieldName { get; set; }
+
+		public string Filter { get; set; }
 	}
 }

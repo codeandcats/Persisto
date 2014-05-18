@@ -11,43 +11,121 @@ using System.Collections.Generic;
 using System.Linq;
 using Persisto;
 
+<#
+
+Func<Stack<IDbModelInfo>> getModelInfoStack = () =>
+	{
+		var stack = new Stack<IDbModelInfo>();
+		
+		var info = ModelInfo;
+
+		while (info != null)
+		{
+			stack.Push(info);
+			info = info.BaseModelInfo;
+		}
+
+		return stack;
+	};
+
+#>
+
 namespace Persisto.Generated.Models
 {
 	public class <#= ModelInfo.GeneratedModelTypeName #> : <#= ModelInfo.ModelType.FullName #>, IGeneratedModel
 	{
+		public <#= ModelInfo.GeneratedModelTypeName #>()
+		{
+			// Initially set to true so new instances don't try to load objects 
+			// that clearly won't be there. When LoadModel returns one of these
+			// it will set this property to false.
+<#
+var baseModelInfos = getModelInfoStack();
+
+var addedMembers = new List<string>();
+
+while (baseModelInfos.Count > 0)
+{
+	var modelInfo = baseModelInfos.Pop();
+
+	if (modelInfo.Members
+		.Where(m => m.Relation is DbRelation.ManyToOneAttribute)
+		.Where(m => m.Relation.LoadOnDemand)
+		.Where(m => !addedMembers.Contains(m.Name))
+		.Any())
+	{
+		WriteLine("\t\t\t");
+		WriteLine("\t\t\t// {0}", modelInfo.ModelType.Name);
+	}
+
+	foreach (DbMemberInfo member in modelInfo.Members
+		.Where(m => m.Relation is DbRelation.ManyToOneAttribute)
+		.Where(m => m.Relation.LoadOnDemand)
+		.Where(m => !addedMembers.Contains(m.Name)))
+	{
+		WriteLine("\t\t\t_Support.HasMemberLoaded[\"{0}\"] = true;", member.Name);
+	
+		DbRelation.ManyToOneAttribute manyToOne = (DbRelation.ManyToOneAttribute)member.Relation;
+	
+		DbMemberInfo foreignMember = DbModelInfo.Get(manyToOne.ForeignType).ID;
+	
+		IDbModelInfo foreignModelInfo = DbModelInfo.Get(manyToOne.ForeignType);
+	
+		string backingMemberName = member.Name + foreignModelInfo.ID.Name;
+
+		WriteLine("\t\t\t_Support.ObjectIds[\"{0}\"] = default({1});", backingMemberName, foreignMember.MemberType.FullName);
+	}
+}
+#>
+		}
+
 		private ModelSupport __support = new ModelSupport();
 		public ModelSupport _Support
 		{
 			get { return __support; }
 			set { __support = value; }
 		}
-
 <#
-foreach (DbMemberInfo member in ModelInfo.Members
-	.Where(m => m.Relation == null))
+baseModelInfos = getModelInfoStack();
+addedMembers = new List<string>();
+
+while (baseModelInfos.Count > 0)
 {
-	string memberModifiers = " ";
-	string backingMemberName = "";
+	var modelInfo = baseModelInfos.Pop();
+
+	if (modelInfo.Members.Any(m => m.Relation == null))
+	{
+		WriteLine("\t\t");
+		WriteLine("\t\t// ---------- {0} ----------", modelInfo.ModelType.Name);
+		WriteLine("\t\t");
+	}
+
+	foreach (DbMemberInfo member in modelInfo.Members
+		.Where(m => m.Relation == null)
+		.Where(m => !addedMembers.Contains(m.Name)))
+	{
+		string memberModifiers = " ";
+		string backingMemberName = "";
 	
-	if (!ModelInfo.ModelType.IsInterface)
-	{
-		backingMemberName = "base." + member.Name;
-
-		if (member.IsVirtual)
+		if (!ModelInfo.ModelType.IsInterface)
 		{
-			memberModifiers = "override ";
-		}
-		else
-		{
-			memberModifiers = "new ";
-		}
-	}
+			backingMemberName = "base." + member.Name;
 
-	if (ModelInfo.ModelType.IsInterface || member.IsAbstract)
-	{
-		backingMemberName = member.Name.ToCamelCase();
-		WriteLine("\t\tprivate " + member.MemberType.FullName + " " + backingMemberName + ";");
-	}
+			if (member.IsVirtual)
+			{
+				memberModifiers = "override ";
+			}
+			else
+			{
+				memberModifiers = "new ";
+			}
+		}
+
+		if (ModelInfo.ModelType.IsInterface || member.IsAbstract)
+		{
+			backingMemberName = member.Name.ToCamelCase();
+			WriteLine("\t\tprivate " + member.MemberType.FullName + " " + backingMemberName + ";");
+		}
 #>
 		public <#= memberModifiers + member.MemberType.FullName + " " + member.Name #>
 		{
@@ -69,43 +147,35 @@ foreach (DbMemberInfo member in ModelInfo.Members
 		}
 
 <#
-}
+	}
+
 #>
 		
 <#
-foreach (DbMemberInfo member in ModelInfo.Members
-	.Where(m => m.Relation is DbRelation.ManyToOneAttribute)
-	.Where(m => m.Relation.LoadOnDemand))
-{
-	DbRelation.ManyToOneAttribute manyToOne = (DbRelation.ManyToOneAttribute)member.Relation;
+	foreach (DbMemberInfo member in modelInfo.Members
+		.Where(m => m.Relation is DbRelation.ManyToOneAttribute)
+		.Where(m => m.Relation.LoadOnDemand)
+		.Where(m => !addedMembers.Contains(m.Name)))
+	{
+		DbRelation.ManyToOneAttribute manyToOne = (DbRelation.ManyToOneAttribute)member.Relation;
 	
-	DbMemberInfo foreignMember = DbModelInfo.Get(manyToOne.ForeignType).ID;
+		DbMemberInfo foreignMember = DbModelInfo.Get(manyToOne.ForeignType).ID;
 	
-	IDbModelInfo foreignModelInfo = DbModelInfo.Get(manyToOne.ForeignType);
+		IDbModelInfo foreignModelInfo = DbModelInfo.Get(manyToOne.ForeignType);
 	
-	string backingMemberName = member.Name + foreignModelInfo.ID.Name;
-
-	string hasLoadedField = "HasLoaded" + member.Name;
-	
+		string backingMemberName = member.Name + foreignModelInfo.ID.Name;
 #>
-		internal <#= foreignMember.MemberType.FullName #> <#= backingMemberName #> = default(<#= foreignMember.MemberType.FullName #>);
-		
-		// Initially set to true so new instances don't try to load objects 
-		// that clearly won't be there. When LoadModel returns one of these
-		// it will set this property to false.
-		internal bool <#= hasLoadedField #> = true;
-		
 		public override <#= member.MemberType.FullName #> <#= member.Name #>
 		{
 			get
 			{
-				if (!<#= hasLoadedField #>)
+				if (_Support.HasMemberLoaded["<#=member.Name#>"])
 				{
 					using (var db = this._Support.CreateConnection())
 					{
-						base.<#= member.Name #> = db.LoadModelById<<#= member.MemberType.FullName #>>(<#= backingMemberName #>);
+						base.<#= member.Name #> = db.LoadModelById<<#= member.MemberType.FullName #>>(_Support.ObjectIds["<#= backingMemberName #>"]);
 					}
-					<#= hasLoadedField #> = true;
+					_Support.HasMemberLoaded["<#=member.Name#>"] = true;
 				}
 				
 				return base.<#= member.Name #>;
@@ -114,42 +184,39 @@ foreach (DbMemberInfo member in ModelInfo.Members
 			{
 				if (value == null)
 				{
-					<#= backingMemberName #> = default(<#= foreignMember.MemberType.FullName #>);
+					_Support.ObjectIds["<#= backingMemberName #>"] = default(<#= foreignMember.MemberType.FullName #>);
 				}
 				else
 				{
-					<#= backingMemberName #> = value.<#= foreignMember.Name #>;
+					_Support.ObjectIds["<#= backingMemberName #>"] = value.<#= foreignMember.Name #>;
 				}
 				
 				base.<#= member.Name #> = value;
 				
-				<#= hasLoadedField #> = true;
+				_Support.HasMemberLoaded["<#=member.Name#>"] = true;
 			}
 		}
 <#
-}
+	}
 
-foreach (IDbMemberInfo member in ModelInfo.Members
-	.Where(m => m.Relation is DbRelation.OneToManyAttribute)
-	.Where(m => m.Relation.LoadOnDemand))
-{
-	string backingMemberName = 
-		member.Name.ToLower().Substring(0, 1) +
-		member.Name.ToLower().Substring(1);
+	foreach (IDbMemberInfo member in modelInfo.Members
+		.Where(m => m.Relation is DbRelation.OneToManyAttribute)
+		.Where(m => m.Relation.LoadOnDemand)
+		.Where(m => !addedMembers.Contains(m.Name)))
+	{
+		string backingMemberName = 
+			member.Name.ToLower().Substring(0, 1) +
+			member.Name.ToLower().Substring(1);
 
-	string hasLoadedMemberName = "HasLoaded" + member.Name;
-
-	string foreignFieldName = member.Relation.FieldName;
+		string foreignFieldName = member.Relation.FieldName;
 #>
-		internal bool <#= hasLoadedMemberName #> = false;
-		
 		private List<<#= member.Relation.ForeignType.FullName #>> <#= backingMemberName #>;
 		
 		public override List<<#= member.Relation.ForeignType.FullName #>> <#= member.Name #>
 		{
 			get
 			{
-				if (!<#= hasLoadedMemberName #>)
+				if (!_Support.HasMemberLoaded["<#=member.Name#>"])
 				{
 					using (var db = this._Support.CreateConnection())
 					{
@@ -160,7 +227,7 @@ foreach (IDbMemberInfo member in ModelInfo.Members
 								ParamValues = new object[] { <#= ModelInfo.ID.Name #> } 
 							}).ToList();
 					}
-					<#= hasLoadedMemberName #> = true;
+					_Support.HasMemberLoaded["<#=member.Name#>"] = true;
 				}
 				
 				return <#= backingMemberName #>;
@@ -169,7 +236,7 @@ foreach (IDbMemberInfo member in ModelInfo.Members
 			{
 				if (value == null)
 				{
-					if (<#= hasLoadedMemberName #>)
+					if (_Support.HasMemberLoaded["<#=member.Name#>"])
 					{
 						<#= backingMemberName #>.Clear();
 					}
@@ -179,36 +246,33 @@ foreach (IDbMemberInfo member in ModelInfo.Members
 					<#= backingMemberName #> = value;
 				}
 				
-				<#= hasLoadedMemberName #> = true;
+				_Support.HasMemberLoaded["<#=member.Name#>"] = true;
 			}
 		}
 <#
-}
+	}
 
 
-foreach (IDbMemberInfo member in ModelInfo.Members
-	.Where(m => m.Relation is DbRelation.ManyToManyAttribute)
-	.Where(m => m.Relation.LoadOnDemand))
-{
-	string backingMemberName = 
-		member.Name.ToLower().Substring(0, 1) +
-		member.Name.ToLower().Substring(1);
+	foreach (IDbMemberInfo member in modelInfo.Members
+		.Where(m => m.Relation is DbRelation.ManyToManyAttribute)
+		.Where(m => m.Relation.LoadOnDemand)
+		.Where(m => !addedMembers.Contains(m.Name)))
+	{
+		string backingMemberName = 
+			member.Name.ToLower().Substring(0, 1) +
+			member.Name.ToLower().Substring(1);
 
-	string hasLoadedMemberName = "HasLoaded" + member.Name;
+		DbRelation.ManyToManyAttribute manyToMany = member.Relation as DbRelation.ManyToManyAttribute;
 
-	DbRelation.ManyToManyAttribute manyToMany = member.Relation as DbRelation.ManyToManyAttribute;
-
-	IDbModelInfo foreignModelInfo = DbModelInfo.Get(manyToMany.ForeignType);
+		IDbModelInfo foreignModelInfo = DbModelInfo.Get(manyToMany.ForeignType);
 #>
-		internal bool <#= hasLoadedMemberName #> = false;
-		
 		private List<<#= member.Relation.ForeignType.FullName #>> <#= backingMemberName #>;
 		
 		public override List<<#= member.Relation.ForeignType.FullName #>> <#= member.Name #>
 		{
 			get
 			{
-				if (!<#= hasLoadedMemberName #>)
+				if (!_Support.HasMemberLoaded["<#= member.Name #>"])
 				{
 					using (var db = this._Support.CreateConnection())
 					{
@@ -226,7 +290,7 @@ foreach (IDbMemberInfo member in ModelInfo.Members
 								ParamValues = new object[] { <#= ModelInfo.ID.Name #> }
 							}).ToList();
 					}
-					<#= hasLoadedMemberName #> = true;
+					_Support.HasMemberLoaded["<#= member.Name #>"] = true;
 				}
 				
 				return <#= backingMemberName #>;
@@ -235,7 +299,7 @@ foreach (IDbMemberInfo member in ModelInfo.Members
 			{
 				if (value == null)
 				{
-					if (<#= hasLoadedMemberName #>)
+					if (_Support.HasMemberLoaded["<#= member.Name #>"])
 					{
 						<#= backingMemberName #>.Clear();
 					}
@@ -245,12 +309,17 @@ foreach (IDbMemberInfo member in ModelInfo.Members
 					<#= backingMemberName #> = value;
 				}
 				
-				<#= hasLoadedMemberName #> = true;
+				_Support.HasMemberLoaded["<#= member.Name #>"] = true;
 			}
 		}
 <#
+	}
+	
+	foreach (var member in modelInfo.Members)
+	{
+		addedMembers.Add(member.Name);
+	}
 }
-
 #>
 	}
 }
